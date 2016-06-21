@@ -1,0 +1,4 @@
+/AcmeDriver/bin/
+/AcmeDriver/obj/
+/packages/*/
+/.vs/Acme/v14/*.suo
