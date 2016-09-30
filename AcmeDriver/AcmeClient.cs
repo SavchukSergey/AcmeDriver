@@ -31,7 +31,11 @@ namespace AcmeDriver {
             var data = await SendPostAsync<object, AcmeRegistration>("/acme/new-reg", new {
                 resource = "new-reg",
                 contact = contacts
+            }, (headers, registration) =>
+            {
+                var x = headers["x"];
             });
+            reg.Id = data.Id;
             return data;
         }
 
@@ -89,11 +93,17 @@ namespace AcmeDriver {
         public AcmeClientRegistration Registration { get; set; }
 
         private string ComputeSignature(byte[] data) {
+            if (Registration == null) {
+                throw new Exception("registration is not set");
+            }
             var signature = Registration.Key.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
             return Base64Url.Encode(signature);
         }
 
         private string Sign(byte[] payload) {
+            if (Registration == null) {
+                throw new Exception("registration is not set");
+            }
             var protectedHeader = new {
                 nonce = _nonce
             };
