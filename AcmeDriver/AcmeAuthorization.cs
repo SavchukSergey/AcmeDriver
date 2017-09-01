@@ -19,6 +19,7 @@ namespace AcmeDriver {
         [JsonProperty("combinations")]
         public int[][] Combinations { get; set; }
 
-        public string Location { get; set; }
+        public Uri Location { get; set; }
+
     }
 }

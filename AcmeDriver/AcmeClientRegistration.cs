@@ -2,6 +2,7 @@
 using System.Text;
 using System.Xml.Linq;
 using Newtonsoft.Json;
+using System;
 
 namespace AcmeDriver {
     public class AcmeClientRegistration {
@@ -32,10 +33,5 @@ namespace AcmeDriver {
             return Base64Url.Encode(hash);
         }
 
-        public XElement Export() {
-            return new XElement("registration",
-                new XAttribute("id", Id.ToString()),
-                new XElement("key", Key.ToXmlString(true)));
-        }
     }
 }

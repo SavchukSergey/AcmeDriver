@@ -1,19 +1,26 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Net.Http;
+using System.Collections.Generic;
+using System.Net.Http.Headers;
+using AcmeDriver.Handlers;
 
 namespace AcmeDriver {
     public class AcmeClient {
 
-        private readonly string _baseUrl;
+        private readonly Uri _baseUrl;
         private string _nonce;
 
+        public const string STAGING_URL = "https://acme-staging.api.letsencrypt.org";
+
         public AcmeClient(string baseUrl) {
-            _baseUrl = baseUrl;
+            _baseUrl = new Uri(baseUrl);
         }
 
         public async Task<AcmeDirectory> GetDirectoryAsync() {
@@ -22,7 +29,8 @@ namespace AcmeDriver {
 
         public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, RSA rsa = null) {
             if (rsa == null) {
-                rsa = new RSACryptoServiceProvider(2048);
+                rsa = RSA.Create();
+                rsa.KeySize = 2048;
             }
             var reg = new AcmeClientRegistration {
                 Key = rsa
@@ -31,9 +39,6 @@ namespace AcmeDriver {
             var data = await SendPostAsync<object, AcmeRegistration>("/acme/new-reg", new {
                 resource = "new-reg",
                 contact = contacts
-            }, (headers, registration) =>
-            {
-                var x = headers["x"];
             });
             reg.Id = data.Id;
             return data;
@@ -67,13 +72,13 @@ namespace AcmeDriver {
                     value = domainName
                 }
             }, (headers, authz) => {
-                authz.Location = headers["Location"];
+                authz.Location = headers.Location;
             });
             return data;
         }
 
 
-        public async Task<AcmeAuthorization> GetAuthorizationAsync(string location) {
+        public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
             var data = await SendGetAsync<AcmeAuthorization>(location);
             data.Location = location;
             return data;
@@ -128,61 +133,56 @@ namespace AcmeDriver {
             return JsonConvert.SerializeObject(json);
         }
 
-        private string FormatUrl(string relUrl) {
-            if (relUrl.StartsWith("https://")) return relUrl;
-            return (_baseUrl.TrimEnd('/') + '/' + relUrl.TrimStart('/')).TrimEnd('/');
-        }
-
-        private async Task<TResult> SendPostAsync<TSource, TResult>(string url, TSource model, Action<WebHeaderCollection, TResult> headersHandler = null) where TResult : class {
+        private async Task<TResult> SendPostAsync<TSource, TResult>(string url, TSource model, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
             var dataContent = JsonConvert.SerializeObject(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(data);
-            var signedData = Encoding.UTF8.GetBytes(signedContent);
 
-            var webRequest = WebRequest.Create(FormatUrl(url));
-            webRequest.Method = "POST";
-            webRequest.ContentType = "application/json";
-            webRequest.ContentLength = signedData.Length;
-            var requestStream = await webRequest.GetRequestStreamAsync();
-            await requestStream.WriteAsync(signedData, 0, signedData.Length);
-
-            return await ProcessRequest(webRequest, headersHandler);
-        }
-
-        private async Task<TResult> SendGetAsync<TResult>(string url, Action<WebHeaderCollection, TResult> headersHandler = null) where TResult : class {
-            var webRequest = (HttpWebRequest)WebRequest.Create(FormatUrl(url));
-            webRequest.Method = "GET";
-            webRequest.Accept = "application/json";
-            return await ProcessRequest(webRequest, headersHandler);
-        }
-
-        private async Task<TResult> ProcessRequest<TResult>(WebRequest webRequest, Action<WebHeaderCollection, TResult> headersHandler = null) where TResult : class {
-            try {
-                var response = await webRequest.GetResponseAsync();
-                CheckNonce(response);
-                var responseStream = response.GetResponseStream();
-                if (responseStream == null) return null;
-                var responseReader = new StreamReader(responseStream);
-                var responseContent = await responseReader.ReadToEndAsync();
-                var res = JsonConvert.DeserializeObject<TResult>(responseContent);
-                headersHandler?.Invoke(response.Headers, res);
-                return res;
-            } catch (WebException exc) {
-                var excResponse = exc.Response;
-                var responseStream = excResponse.GetResponseStream();
-                if (responseStream == null) throw;
-                var responseReader = new StreamReader(responseStream);
-                var responseContent = await responseReader.ReadToEndAsync();
-                throw new Exception(responseContent);
+            using (var client = CreateHttpClient()) {
+                var response = await client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+                return await ProcessRequest(response, headersHandler);
             }
         }
 
-        private void CheckNonce(WebResponse response) {
-            var replayNonce = response.Headers["Replay-Nonce"];
-            if (!string.IsNullOrWhiteSpace(replayNonce)) {
-                _nonce = replayNonce;
+        private Task<TResult> SendGetAsync<TResult>(string url, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+            return SendGetAsync(new Uri(url, UriKind.Relative), headersHandler);
+        }
+
+        private async Task<TResult> SendGetAsync<TResult>(Uri url, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+            using (var client = CreateHttpClient()) {
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                var response = await client.SendAsync(request);
+                return await ProcessRequest(response, headersHandler);
             }
         }
+
+        private async Task<TResult> ProcessRequest<TResult>(HttpResponseMessage response, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+            CheckNonce(response);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var res = JsonConvert.DeserializeObject<TResult>(responseContent);
+            headersHandler?.Invoke(response.Headers, res);
+            return res;
+        }
+
+        private void CheckNonce(HttpResponseMessage response) {
+            if (response.Headers.TryGetValues("Replay-Nonce", out IEnumerable<string> replayNonce)) {
+                _nonce = replayNonce.FirstOrDefault();
+            }
+        }
+
+        private HttpClient CreateHttpClient() {
+            var handler = new AcmeExceptionHandler {
+                InnerHandler = new HttpClientHandler {
+
+                }
+            };
+            return new HttpClient(handler) {
+                BaseAddress = _baseUrl
+            };
+        }
+
+
         /*
 
 

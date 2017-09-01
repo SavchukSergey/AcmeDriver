@@ -12,13 +12,12 @@ namespace AcmeDriver {
 
         private static async Task MainAsync() {
             try {
-                var client = new AcmeClient("https://acme-staging.api.letsencrypt.org");
+                var client = new AcmeClient(AcmeClient.STAGING_URL);
                 var dir = await client.GetDirectoryAsync();
 
                 var reg = await LoadRegistrationAsync();
                 if (reg == null) {
-                    var rsa = new RSACryptoServiceProvider(2048);
-                    await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" }, rsa);
+                    await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
                     reg = client.Registration;
                     await SaveRegistrationASync(reg);
                     await client.AcceptAgreementAsync("https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf");
@@ -66,13 +65,13 @@ namespace AcmeDriver {
         private static AcmeRegistrationModel Convert(AcmeClientRegistration reg) {
             return new AcmeRegistrationModel {
                 Id = reg.Id,
-                Key = reg.Key.ToXmlString(true)
+                Key = reg.Key.ExportToXml().ToString()
             };
         }
 
         private static AcmeClientRegistration Convert(AcmeRegistrationModel reg) {
-            var rsa = new RSACryptoServiceProvider();
-            rsa.FromXmlString(reg.Key);
+            var rsa = RSA.Create();
+            rsa.ImportFromXml(reg.Key);
             return new AcmeClientRegistration {
                 Id = reg.Id,
                 Key = rsa
@@ -96,4 +95,5 @@ namespace AcmeDriver {
         }
 
     }
+
 }
