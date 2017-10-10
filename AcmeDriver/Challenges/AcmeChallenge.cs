@@ -22,19 +22,7 @@ namespace AcmeDriver {
         [JsonProperty("keyAuthorization")]
         public string KeyAuthorization { get; set; }
 
-        public object GetResponse() {
-            switch (Type) {
-                case "dns-01":
-                    return new {
-                        type = "dns-01",
-                        token = Token
-                    };
-                default:
-                    throw new NotSupportedException($"{Type} challenge type is not supported");
-            }
-        }
-
-        public string GetKeyAythorization(AcmeClientRegistration reg) {
+        public string GetKeyAuthorization(AcmeClientRegistration reg) {
             return $"{Token}.{reg.GetJwkThumbprint()}";
         }
 

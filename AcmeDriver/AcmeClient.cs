@@ -77,16 +77,23 @@ namespace AcmeDriver {
             return data;
         }
 
-        public async Task<AcmeOrder> NewOrderAsync(AcmeOrder order) {
-            var data = await SendPostAsync<object, AcmeOrder>("/acme/new-cert", new {
+        public async Task<Uri> NewOrderAsync(AcmeOrder order) {
+            Uri location = null;
+            await SendPostAsync<object>("/acme/new-cert", new {
                 resource = "new-cert",
                 csr = Base64Url.Encode(order.Csr.GetPemCsrData()),
                 notBefore = order.NotBefore.ToRfc3339String(),
                 notAfter = order.NotAfter.ToRfc3339String(),
             }, (headers, ord) => {
-                ord.Location = headers.Location;
+                location = headers.Location;
             });
-            return data;
+            return location;
+        }
+
+        public async Task<byte[]> DownloadCertificateAsync(Uri uri) {
+            using (var client = new HttpClient()) {
+                return await client.GetByteArrayAsync(uri);
+            }
         }
 
         public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
@@ -95,13 +102,12 @@ namespace AcmeDriver {
             return data;
         }
 
-        public async Task<AcmeChallenge> SubmitChallenge(AcmeChallenge challenge) {
-            var data = await SendPostAsync<object, AcmeChallenge>(challenge.Uri, challenge.GetResponse());
-            return data;
-        }
-
-        public async Task<AcmeChallenge> CompleteChallenge(AcmeChallenge challenge) {
-            var data = await SendPostAsync<object, AcmeChallenge>(challenge.Uri, challenge.GetResponse());
+        public async Task<AcmeChallenge> CompleteChallengeAsync(AcmeChallenge challenge) {
+            var data = await SendPostAsync<object, AcmeChallenge>(challenge.Uri, new {
+                resource = "challenge",
+                type = challenge.Type,
+                keyAuthorization = challenge.GetKeyAuthorization(Registration)
+            });
             return data;
         }
 
@@ -155,6 +161,17 @@ namespace AcmeDriver {
             }
         }
 
+        private async Task<string> SendPostAsync<TSource>(string url, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
+            var dataContent = JsonConvert.SerializeObject(model);
+            var data = Encoding.UTF8.GetBytes(dataContent);
+            var signedContent = Sign(data);
+
+            using (var client = CreateHttpClient()) {
+                var response = await client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+                return await ProcessRequest(response, headersHandler);
+            }
+        }
+
         private Task<TResult> SendGetAsync<TResult>(string url, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
             return SendGetAsync(new Uri(url, UriKind.Relative), headersHandler);
         }
@@ -172,6 +189,13 @@ namespace AcmeDriver {
             CheckNonce(response);
             var responseContent = await response.Content.ReadAsStringAsync();
             var res = JsonConvert.DeserializeObject<TResult>(responseContent);
+            headersHandler?.Invoke(response.Headers, res);
+            return res;
+        }
+
+        private async Task<string> ProcessRequest(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
+            CheckNonce(response);
+            var res = await response.Content.ReadAsStringAsync();
             headersHandler?.Invoke(response.Headers, res);
             return res;
         }

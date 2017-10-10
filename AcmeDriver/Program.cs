@@ -41,6 +41,34 @@ namespace AcmeDriver {
                 }
 
 
+                var accountKey = client.Registration.GetJwkThumbprint();
+                var authz = await client.NewAuthorizationAsync("yogam.com.ua");
+
+                var httpChallenge = authz.Challenges.GetHttp01Challenge();
+                if (httpChallenge != null) {
+                    Console.WriteLine($"FileName: {httpChallenge.Token}");
+                    Console.WriteLine($"FileDirectory = /.well-known/acme-challenge/");
+                    Console.WriteLine($"FileContent = {httpChallenge.GetKeyAuthorization(client.Registration)}");
+                }
+
+                var dnsChallenge = authz.Challenges.GetDns01Challenge();
+                if (dnsChallenge != null) {
+                    Console.WriteLine($"DnsName = _acme-challenge");
+                    Console.WriteLine($"DnsEntry = {Base64Url.Encode(_sha256.ComputeHash(Encoding.UTF8.GetBytes(dnsChallenge.GetKeyAuthorization(client.Registration))))}");
+                }
+
+                Console.WriteLine($"Location: {authz.Location}");
+
+                Console.WriteLine("go");
+                Console.ReadKey();
+
+                var res = await client.CompleteChallengeAsync(dnsChallenge);
+                
+
+                do {
+                    authz = await client.GetAuthorizationAsync(authz.Location);
+                } while (authz.Status == AcmeAuthorizationStatus.Pending);
+
                 var csr = await GetCsrAsync();
                 var order = await client.NewOrderAsync(new AcmeOrder {
                     Csr = csr,
@@ -48,26 +76,8 @@ namespace AcmeDriver {
                     NotAfter = DateTime.UtcNow.AddMonths(1)
                 });
 
-                var accountKey = client.Registration.GetJwkThumbprint();
-                var authz = await client.NewAuthorizationAsync("yogam.com.ua");
-
-                var httpChallenge = authz.Challenges.GetHttp01Challenge();
-                if (httpChallenge != null) {
-                    var keyAuthorization = $"{httpChallenge.Token}.{accountKey}";
-                    Console.WriteLine($"FileName: {httpChallenge.Token}");
-                    Console.WriteLine($"FileDirectory = /.well-known/acme-challenge/");
-                    Console.WriteLine($"FileContent = {keyAuthorization}");
-                }
-
-                var dnsChallenge = authz.Challenges.GetDns01Challenge();
-                if (dnsChallenge != null) {
-                    var keyAuthorization = $"{dnsChallenge.Token}.{accountKey}";
-                    Console.WriteLine($"DnsName = _acme-challenge");
-                    Console.WriteLine($"DnsEntry = {Base64Url.Encode(_sha256.ComputeHash(Encoding.UTF8.GetBytes(keyAuthorization)))}");
-                }
-
-                Console.WriteLine($"Location: {authz.Location}");
-
+                var crt = await client.DownloadCertificateAsync(order);
+                Console.WriteLine(crt);
             } catch (Exception exc) {
                 Console.WriteLine(exc.Message);
             }
