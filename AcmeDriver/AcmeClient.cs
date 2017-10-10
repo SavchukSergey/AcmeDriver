@@ -12,15 +12,34 @@ using Newtonsoft.Json;
 using AcmeDriver.Handlers;
 
 namespace AcmeDriver {
-    public class AcmeClient {
+    public class AcmeClient : IDisposable {
 
-        private readonly Uri _baseUrl;
         private string _nonce;
+        private HttpClient _client;
+        private AcmeDirectory _directory;
 
         public const string STAGING_URL = "https://acme-staging.api.letsencrypt.org";
 
-        public AcmeClient(string baseUrl) {
-            _baseUrl = new Uri(baseUrl);
+        public AcmeClient(AcmeDirectory directory) {
+            _directory = directory;
+            var handler = new AcmeExceptionHandler {
+                InnerHandler = new HttpClientHandler {
+                }
+            };
+            _client = new HttpClient(handler);
+        }
+
+        public static async Task<AcmeClient> CreateAcmeClient(string baseUrl) {
+            using (var client = new HttpClient()) {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/directory");
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                var response = await client.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var res = JsonConvert.DeserializeObject<AcmeDirectory>(responseContent);
+                var acmeClient = new AcmeClient(res);
+                acmeClient.CheckNonce(response);
+                return acmeClient;
+            }
         }
 
         public async Task<AcmeDirectory> GetDirectoryAsync() {
@@ -36,7 +55,7 @@ namespace AcmeDriver {
                 Key = rsa
             };
             Registration = reg;
-            var data = await SendPostAsync<object, AcmeRegistration>("/acme/new-reg", new {
+            var data = await SendPostAsync<object, AcmeRegistration>(_directory.NewRegUrl, new {
                 resource = "new-reg",
                 contact = contacts
             });
@@ -65,21 +84,18 @@ namespace AcmeDriver {
         }
 
         public async Task<AcmeAuthorization> NewAuthorizationAsync(string domainName) {
-            var data = await SendPostAsync<object, AcmeAuthorization>("/acme/new-authz", new {
+            return await SendPostAsync<object, AcmeAuthorization>(_directory.NewAuthzUrl, new {
                 resource = "new-authz",
                 identifier = new {
                     type = "dns",
                     value = domainName
                 }
-            }, (headers, authz) => {
-                authz.Location = headers.Location;
             });
-            return data;
         }
 
         public async Task<Uri> NewOrderAsync(AcmeOrder order) {
             Uri location = null;
-            await SendPostAsync<object>("/acme/new-cert", new {
+            await SendPostAsync<object>(_directory.NewCertUrl, new {
                 resource = "new-cert",
                 csr = Base64Url.Encode(order.Csr.GetPemCsrData()),
                 notBefore = order.NotBefore.ToRfc3339String(),
@@ -107,7 +123,7 @@ namespace AcmeDriver {
                 resource = "challenge",
                 type = challenge.Type,
                 keyAuthorization = challenge.GetKeyAuthorization(Registration)
-            });
+            }, null);
             return data;
         }
 
@@ -150,15 +166,19 @@ namespace AcmeDriver {
             return JsonConvert.SerializeObject(json);
         }
 
-        private async Task<TResult> SendPostAsync<TSource, TResult>(string url, TSource model, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+        private async Task<TResult> SendPostAsync<TSource, TResult>(string url, TSource model) where TResult : AcmeResource {
+            return await SendPostAsync<TSource, TResult>(url, model, (headers, authz) => {
+                authz.Location = headers.Location;
+            });
+        }
+
+        private async Task<TResult> SendPostAsync<TSource, TResult>(string url, TSource model, Action<HttpResponseHeaders, TResult> headersHandler) where TResult : class {
             var dataContent = JsonConvert.SerializeObject(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(data);
 
-            using (var client = CreateHttpClient()) {
-                var response = await client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
-                return await ProcessRequest(response, headersHandler);
-            }
+            var response = await _client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            return await ProcessRequestAsync(response, headersHandler);
         }
 
         private async Task<string> SendPostAsync<TSource>(string url, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
@@ -166,10 +186,8 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(data);
 
-            using (var client = CreateHttpClient()) {
-                var response = await client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
-                return await ProcessRequest(response, headersHandler);
-            }
+            var response = await _client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            return await ProcessRequestAsync(response, headersHandler);
         }
 
         private Task<TResult> SendGetAsync<TResult>(string url, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
@@ -177,15 +195,13 @@ namespace AcmeDriver {
         }
 
         private async Task<TResult> SendGetAsync<TResult>(Uri url, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
-            using (var client = CreateHttpClient()) {
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                var response = await client.SendAsync(request);
-                return await ProcessRequest(response, headersHandler);
-            }
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var response = await _client.SendAsync(request);
+            return await ProcessRequestAsync(response, headersHandler);
         }
 
-        private async Task<TResult> ProcessRequest<TResult>(HttpResponseMessage response, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+        private async Task<TResult> ProcessRequestAsync<TResult>(HttpResponseMessage response, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
             CheckNonce(response);
             var responseContent = await response.Content.ReadAsStringAsync();
             var res = JsonConvert.DeserializeObject<TResult>(responseContent);
@@ -193,7 +209,7 @@ namespace AcmeDriver {
             return res;
         }
 
-        private async Task<string> ProcessRequest(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
+        private async Task<string> ProcessRequestAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
             CheckNonce(response);
             var res = await response.Content.ReadAsStringAsync();
             headersHandler?.Invoke(response.Headers, res);
@@ -206,15 +222,8 @@ namespace AcmeDriver {
             }
         }
 
-        private HttpClient CreateHttpClient() {
-            var handler = new AcmeExceptionHandler {
-                InnerHandler = new HttpClientHandler {
-
-                }
-            };
-            return new HttpClient(handler) {
-                BaseAddress = _baseUrl
-            };
+        public void Dispose() {
+            _client.Dispose();
         }
 
     }

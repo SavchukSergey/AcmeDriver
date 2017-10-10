@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 
 namespace AcmeDriver {
-    public class AcmeAuthorization {
+    public class AcmeAuthorization : AcmeResource {
 
         [JsonProperty("identifier")]
         public AcmeIdentifier Identifier { get; set; }
@@ -18,8 +18,6 @@ namespace AcmeDriver {
 
         [JsonProperty("combinations")]
         public int[][] Combinations { get; set; }
-
-        public Uri Location { get; set; }
 
     }
 }

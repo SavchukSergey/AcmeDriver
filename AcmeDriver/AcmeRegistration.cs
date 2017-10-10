@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 
 namespace AcmeDriver {
-    public class AcmeRegistration {
+    public class AcmeRegistration : AcmeResource {
 
         [JsonProperty("id")]
         public long Id { get; set; }

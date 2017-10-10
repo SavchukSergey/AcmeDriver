@@ -53,7 +53,7 @@ namespace AcmeDriver {
         ///<para>Unavailable in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
         ///</summary>
         [JsonProperty("new-authz")]
-        public string NewAuthUrl { get; set; }
+        public string NewAuthzUrl { get; set; }
 
         ///<summary>
         /// <para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-01</para>

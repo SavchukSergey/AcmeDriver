@@ -27,9 +27,8 @@ namespace AcmeDriver {
 
         private static async Task MainAsync() {
             try {
-                var client = new AcmeClient(AcmeClient.STAGING_URL);
+                var client = await AcmeClient.CreateAcmeClient(AcmeClient.STAGING_URL);
                 var dir = await client.GetDirectoryAsync();
-
                 var reg = await LoadRegistrationAsync();
                 if (reg == null) {
                     await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
