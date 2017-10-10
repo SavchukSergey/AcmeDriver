@@ -6,6 +6,10 @@
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
+    <Version>1.0.0-alpha</Version>
+    <Description>Acme Client Protocol Implementation</Description>
+    <Authors>Sergey Savchuk</Authors>
+    <RepositoryUrl>https://github.com/SavchukSergey/AcmeDriver</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
