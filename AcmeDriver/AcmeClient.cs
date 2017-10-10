@@ -77,6 +77,17 @@ namespace AcmeDriver {
             return data;
         }
 
+        public async Task<AcmeOrder> NewOrderAsync(AcmeOrder order) {
+            var data = await SendPostAsync<object, AcmeOrder>("/acme/new-cert", new {
+                resource = "new-cert",
+                csr = Base64Url.Encode(order.Csr.GetPemCsrData()),
+                notBefore = order.NotBefore.ToRfc3339String(),
+                notAfter = order.NotAfter.ToRfc3339String(),
+            }, (headers, ord) => {
+                ord.Location = headers.Location;
+            });
+            return data;
+        }
 
         public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
             var data = await SendGetAsync<AcmeAuthorization>(location);
@@ -182,31 +193,5 @@ namespace AcmeDriver {
             };
         }
 
-
-        /*
-
-
-        Get-Identifier
-        Update-Identifier 
-
-        Get-IssuerCertificate
-        New-Certificate
-        Get-Certificate 
-        Submit-Certificate 
-        Update-Certificate
-
-        Get-ChallengeHandlerProfile
-        Set-ChallengeHandlerProfile
-
-        Set-Proxy
-        Set-ServerDirectory 
-
-        Get-Vault 
-        Get-VaultProfile
-        Set-Vault 
-        Initialize-Vault
-        Set-VaultProfile
-
-         */
     }
 }
