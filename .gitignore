@@ -1,5 +1,5 @@
-/AcmeDriver/bin/
-/AcmeDriver/obj/
-/packages/*/
-/.vs/Acme/v14/*.suo
+/**/bin/
+/**/obj/
 /_ReSharper.Caches/
+/.vs/**/*.suo
+/.vs/**/*.ide

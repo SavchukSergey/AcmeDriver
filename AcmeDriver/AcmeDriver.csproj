@@ -1,12 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netstandard1.3</TargetFramework>
     <Copyright>Copyright © 2017</Copyright>
     <ApplicationIcon />
-    <OutputType>Exe</OutputType>
-    <StartupObject />
-    <Version>1.0.0-alpha</Version>
+    <Version>1.0.0-alpha2</Version>
     <Description>Acme Client Protocol Implementation</Description>
     <Authors>Sergey Savchuk</Authors>
     <RepositoryUrl>https://github.com/SavchukSergey/AcmeDriver</RepositoryUrl>

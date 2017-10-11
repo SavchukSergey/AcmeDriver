@@ -1,31 +1,12 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Security;
+using NUnit;
 
-namespace AcmeDriver {
-    class Program {
-        static void Main(string[] args) {
-            Task.Run(MainAsync).Wait();
-        }
+namespace AcmeDriver.Tests {
+    [TestFixture]
+    public class AcmeClientTest {
 
-        private static async Task<string> GetCsrAsync() {
-            try {
-                using (var file = File.Open("../../../test.csr.txt", FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    using (var reader = new StreamReader(file)) {
-                        var content = await reader.ReadToEndAsync();
-                        return content;
-                    }
-                }
-            } catch {
-                return null;
-            }
-        }
-
-        private static async Task MainAsync() {
+        [Test]
+        public async Task WorkflowTest() {
             try {
                 var client = await AcmeClient.CreateAcmeClient(AcmeClient.STAGING_URL);
                 // var dir = await client.GetDirectoryAsync();
@@ -33,12 +14,13 @@ namespace AcmeDriver {
                 if (reg == null) {
                     await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
                     reg = client.Registration;
-                    await SaveRegistrationASync(reg);
-                    await client.AcceptAgreementAsync("https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf");
+                    await SaveRegistrationAsync(reg);
+                    await client.AcceptRegistrationAgreementAsync(reg.Location, "https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf");
                 } else {
                     client.Registration = reg;
                 }
 
+                var reg2 = await client.GetRegistrationAsync(reg.Location);
 
                 var accountKey = client.Registration.GetJwkThumbprint();
                 var authz = await client.NewAuthorizationAsync("yogam.com.ua");
@@ -62,7 +44,6 @@ namespace AcmeDriver {
                 Console.ReadKey();
 
                 var res = await client.CompleteChallengeAsync(dnsChallenge);
-                
 
                 do {
                     authz = await client.GetAuthorizationAsync(authz.Location);
@@ -84,6 +65,20 @@ namespace AcmeDriver {
             Console.ReadKey();
         }
 
+
+        private static async Task<string> GetCsrAsync() {
+            try {
+                using (var file = File.Open("../../../test.csr.txt", FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    using (var reader = new StreamReader(file)) {
+                        var content = await reader.ReadToEndAsync();
+                        return content;
+                    }
+                }
+            } catch {
+                return null;
+            }
+        }
+
         private static readonly SHA256 _sha256 = new SHA256CryptoServiceProvider();
 
         private static async Task<AcmeClientRegistration> LoadRegistrationAsync() {
@@ -100,7 +95,7 @@ namespace AcmeDriver {
             }
         }
 
-        private static async Task SaveRegistrationASync(AcmeClientRegistration reg) {
+        private static async Task SaveRegistrationAsync(AcmeClientRegistration reg) {
             try {
                 var model = Convert(reg);
                 var content = Serialize(model);
@@ -116,7 +111,8 @@ namespace AcmeDriver {
         private static AcmeRegistrationModel Convert(AcmeClientRegistration reg) {
             return new AcmeRegistrationModel {
                 Id = reg.Id,
-                Key = reg.Key.ExportToXml().ToString()
+                Key = reg.Key.ExportToXml().ToString(),
+                Location = reg.Location
             };
         }
 
@@ -125,7 +121,8 @@ namespace AcmeDriver {
             rsa.ImportFromXml(reg.Key);
             return new AcmeClientRegistration {
                 Id = reg.Id,
-                Key = rsa
+                Key = rsa,
+                Location = reg.Location
             };
         }
 
@@ -143,8 +140,9 @@ namespace AcmeDriver {
 
             public string Key { get; set; }
 
+            public Uri Location { get; set; }
+
         }
 
     }
-
 }

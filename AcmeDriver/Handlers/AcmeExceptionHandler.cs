@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace AcmeDriver.Handlers {
     public class AcmeExceptionHandler : DelegatingHandler {
@@ -9,10 +10,12 @@ namespace AcmeDriver.Handlers {
             var response = await base.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode) {
                 var content = await response.Content.ReadAsStringAsync();
-                throw new AcmeException(content);
+                var res = JsonConvert.DeserializeObject<AcmeExceptionInfo>(content);
+                throw new AcmeException(res);
             }
             return response;
         }
 
     }
+
 }

@@ -7,11 +7,13 @@ using System;
 namespace AcmeDriver {
     public class AcmeClientRegistration {
 
-        private static readonly SHA256 _sha256 = new SHA256CryptoServiceProvider();
+        private static readonly SHA256 _sha256 = SHA256.Create();
 
         public long Id { get; set; }
 
         public RSA Key { get; set; }
+
+        public Uri Location { get; set; }
 
         public object GetJwk() {
             var parameters = Key.ExportParameters(false);

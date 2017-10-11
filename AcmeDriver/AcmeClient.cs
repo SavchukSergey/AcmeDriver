@@ -18,6 +18,8 @@ namespace AcmeDriver {
         private readonly HttpClient _client;
         private readonly AcmeDirectory _directory;
 
+        public AcmeClientRegistration Registration { get; set; }
+
         public const string STAGING_URL = "https://acme-staging.api.letsencrypt.org";
 
         public AcmeClient(string baseUrl) {
@@ -57,6 +59,8 @@ namespace AcmeDriver {
         //     return await SendGetAsync<AcmeDirectory>("directory");
         // }
 
+        #region Registrations
+
         public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, RSA rsa = null) {
             if (rsa == null) {
                 rsa = RSA.Create();
@@ -66,7 +70,7 @@ namespace AcmeDriver {
                 Key = rsa
             };
             Registration = reg;
-            var data = await SendPostAsync<object, AcmeRegistration>(_directory.NewRegUrl, new {
+            var data = await SendPostAsync<object, AcmeRegistration>(new Uri(_directory.NewRegUrl), new {
                 resource = "new-reg",
                 contact = contacts
             });
@@ -74,38 +78,83 @@ namespace AcmeDriver {
             return data;
         }
 
-        public async Task<AcmeRegistration> GetRegistrationAsync() {
-            var data = await SendPostAsync<object, AcmeRegistration>($"/acme/reg/{Registration.Id}", new {
+        public async Task<AcmeRegistration> GetRegistrationAsync(Uri registrationUri) {
+            //$"/acme/reg/{Registration.Id}"
+            var data = await SendPostAsync<object, AcmeRegistration>(registrationUri, new {
                 resource = "reg"
             });
             return data;
         }
 
-        public async Task UpdateRegistrationAsync() {
+        public async Task UpdateRegistrationAsync(Uri registrationUri) {
             await Task.FromResult(0);
         }
 
-        public async Task<AcmeRegistration> AcceptAgreementAsync(string agreementUrl) {
-            var data = await SendPostAsync<object, AcmeRegistration>($"/acme/reg/{Registration.Id}", new {
+        public async Task<AcmeRegistration> AcceptRegistrationAgreementAsync(Uri registrationUri, string agreementUrl) {
+            //$"/acme/reg/{Registration.Id}"
+            var data = await SendPostAsync<object, AcmeRegistration>(registrationUri, new {
                 resource = "reg",
                 agreement = agreementUrl
             });
             return data;
         }
 
-        public async Task<AcmeAuthorization> NewAuthorizationAsync(string domainName) {
-            return await SendPostAsync<object, AcmeAuthorization>(_directory.NewAuthzUrl, new {
+        #endregion
+
+        #region Authorizations
+
+        public async Task<AcmeAuthorization> NewAuthorizationAsync(AcmeIdentifier identifier) {
+            return await SendPostAsync<object, AcmeAuthorization>(new Uri(_directory.NewAuthzUrl), new {
                 resource = "new-authz",
                 identifier = new {
-                    type = "dns",
-                    value = domainName
+                    type = identifier.Type,
+                    value = identifier.Value
                 }
             });
         }
 
+        public async Task<AcmeAuthorization> NewAuthorizationAsync(string domainName) {
+            return await NewAuthorizationAsync(new AcmeIdentifier {
+                Type = "dns",
+                Value = domainName
+            });
+        }
+
+        public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
+            var data = await SendGetAsync<AcmeAuthorization>(location);
+            data.Location = location;
+            return data;
+        }
+
+        ///<summary>
+        ///<para>Deactivates authorization.</para>
+        ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
+        ///</summary>
+        public async Task DeactivateAuthorizationAsync(Uri authorizationUri) {
+            await SendPostAsync(authorizationUri, new {
+                status = AcmeAuthorizationStatus.Deactivated.ToString().ToLower()
+            });
+        }
+
+        ///<summary>
+        ///<para>Deletes authorization.</para>
+        ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-02</para>
+        ///<para>Removed in https://tools.ietf.org/html/draft-ietf-acme-acme-03. Use <see cref="M:DeactivateAuthorizationAsync" /></para>
+        ///</summary>
+        public async Task DeleteAuthorizationAsync(Uri authorizationUri) {
+            await SendPostAsync(authorizationUri, new {
+                resource = "authz",
+                delete = true
+            });
+        }
+
+        #endregion
+
+        #region Certificates
+
         public async Task<Uri> NewCertificateAsync(AcmeOrder order) {
             Uri location = null;
-            await SendPostAsync<object>(_directory.NewCertUrl, new {
+            await SendPostAsync<object>(new Uri(_directory.NewCertUrl), new {
                 resource = "new-cert",
                 csr = Base64Url.Encode(order.Csr.GetPemCsrData()),
                 notBefore = order.NotBefore.ToRfc3339String(),
@@ -122,14 +171,12 @@ namespace AcmeDriver {
             }
         }
 
-        public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
-            var data = await SendGetAsync<AcmeAuthorization>(location);
-            data.Location = location;
-            return data;
-        }
+        #endregion
+
+        #region Challenges
 
         public async Task<AcmeChallenge> CompleteChallengeAsync(AcmeChallenge challenge) {
-            var data = await SendPostAsync<object, AcmeChallenge>(challenge.Uri, new {
+            var data = await SendPostAsync<object, AcmeChallenge>(new Uri(challenge.Uri), new {
                 resource = "challenge",
                 type = challenge.Type,
                 keyAuthorization = challenge.GetKeyAuthorization(Registration)
@@ -137,8 +184,7 @@ namespace AcmeDriver {
             return data;
         }
 
-
-        public AcmeClientRegistration Registration { get; set; }
+        #endregion
 
         private string ComputeSignature(byte[] data) {
             if (Registration == null) {
@@ -176,36 +222,32 @@ namespace AcmeDriver {
             return JsonConvert.SerializeObject(json);
         }
 
-        private async Task<TResult> SendPostAsync<TSource, TResult>(string url, TSource model) where TResult : AcmeResource {
-            return await SendPostAsync<TSource, TResult>(url, model, (headers, authz) => {
+        private async Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model) where TResult : AcmeResource {
+            return await SendPostAsync<TSource, TResult>(uri, model, (headers, authz) => {
                 authz.Location = headers.Location;
             });
         }
 
-        private async Task<TResult> SendPostAsync<TSource, TResult>(string url, TSource model, Action<HttpResponseHeaders, TResult> headersHandler) where TResult : class {
+        private async Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler) where TResult : class {
             var dataContent = JsonConvert.SerializeObject(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(data);
 
-            var response = await _client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
-        private async Task<string> SendPostAsync<TSource>(string url, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
+        private async Task<string> SendPostAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
             var dataContent = JsonConvert.SerializeObject(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(data);
 
-            var response = await _client.PostAsync(url, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
-        private Task<TResult> SendGetAsync<TResult>(string url, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
-            return SendGetAsync(new Uri(url, UriKind.Relative), headersHandler);
-        }
-
-        private async Task<TResult> SendGetAsync<TResult>(Uri url, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
+        private async Task<TResult> SendGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+            var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             var response = await _client.SendAsync(request);
             return await ProcessRequestAsync(response, headersHandler);

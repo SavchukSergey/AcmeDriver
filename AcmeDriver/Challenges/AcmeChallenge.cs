@@ -22,6 +22,10 @@ namespace AcmeDriver {
         [JsonProperty("keyAuthorization")]
         public string KeyAuthorization { get; set; }
 
+        [JsonProperty("error")]
+        public AcmeExceptionInfo Error { get; set; }
+
+
         public string GetKeyAuthorization(AcmeClientRegistration reg) {
             return $"{Token}.{reg.GetJwkThumbprint()}";
         }

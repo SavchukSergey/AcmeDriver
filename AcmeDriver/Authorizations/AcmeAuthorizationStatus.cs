@@ -4,6 +4,8 @@ using Newtonsoft.Json;
 namespace AcmeDriver {
     public enum AcmeAuthorizationStatus {
         Valid,
-        Pending
+        Invalid,
+        Pending,
+        Deactivated
     }
 }
