@@ -4,7 +4,7 @@
     <TargetFramework>netstandard1.3</TargetFramework>
     <Copyright>Copyright © 2017</Copyright>
     <ApplicationIcon />
-    <Version>1.0.0-alpha2</Version>
+    <Version>1.0.0-alpha3</Version>
     <Description>Acme Client Protocol Implementation</Description>
     <Authors>Sergey Savchuk</Authors>
     <RepositoryUrl>https://github.com/SavchukSergey/AcmeDriver</RepositoryUrl>

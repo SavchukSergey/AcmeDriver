@@ -1,3 +1,58 @@
+# Usage
+```c#
+    using (var client = await AcmeClient.CreateAcmeClient(AcmeClient.STAGING_URL)) {
+        await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
+        await client.AcceptRegistrationAgreementAsync(client.Registration.Location, "https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf");
+
+        var authz = await client.NewAuthorizationAsync("domain.com");
+
+        Console.WriteLine("Do one of the following:");
+
+        var httpChallenge = authz.GetHttp01Challenge(client.Registration);
+        if (httpChallenge != null) {
+            Console.WriteLine("Put file on your http server");
+            Console.WriteLine($"FileName: {httpChallenge.FileName}");
+            Console.WriteLine($"FileDirectory: {httpChallenge.FileDirectory}");
+            Console.WriteLine($"FileContent: {httpChallenge.FileContent}");
+            Console.WriteLine();
+        }
+
+        var dnsChallenge = authz.GetDns01Challenge(client.Registration);
+        if (dnsChallenge != null) {
+            Console.WriteLine("Create txt record");
+            Console.WriteLine($"DnsRecord: {dnsChallenge.DnsRecord}");
+            Console.WriteLine($"DnsRecordContent: {dnsChallenge.DnsRecordContent}");
+            Console.WriteLine();
+        }
+
+        Console.WriteLine("And press any key");
+        Console.ReadKey();
+
+        var res = await client.CompleteChallengeAsync(dnsChallenge);
+
+        do {
+            authz = await client.GetAuthorizationAsync(authz.Location);
+        } while (authz.Status == AcmeAuthorizationStatus.Pending);
+
+        var csr = await GetCsrAsync();
+        var order = await client.NewCertificateAsync(new AcmeOrder {
+            Csr = csr,
+            NotBefore = DateTime.UtcNow,
+            NotAfter = DateTime.UtcNow.AddMonths(1)
+        });
+
+        var crt = await client.DownloadCertificateAsync(order);
+        Console.WriteLine(crt);
+    }
+
+    async Task<string> GetCsrAsync() {
+        return Task.FromResult($"
+-----BEGIN NEW CERTIFICATE REQUEST-----
+...
+-----END NEW CERTIFICATE REQUEST-----
+".Trim());
+    }
+```
 
 # ACME Resources availablility
 

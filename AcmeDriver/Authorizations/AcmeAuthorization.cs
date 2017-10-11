@@ -14,7 +14,7 @@ namespace AcmeDriver {
         public DateTimeOffset Expires { get; set; }
 
         [JsonProperty("challenges")]
-        public AcmeChallenge[] Challenges { get; set; }
+        public AcmeChallengeData[] Challenges { get; set; }
 
         [JsonProperty("combinations")]
         public int[][] Combinations { get; set; }

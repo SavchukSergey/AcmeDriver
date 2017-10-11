@@ -175,8 +175,12 @@ namespace AcmeDriver {
 
         #region Challenges
 
-        public async Task<AcmeChallenge> CompleteChallengeAsync(AcmeChallenge challenge) {
-            var data = await SendPostAsync<object, AcmeChallenge>(new Uri(challenge.Uri), new {
+        public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge2 challenge) {
+            return await CompleteChallengeAsync(challenge.Data);
+        }
+        
+        public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge) {
+            var data = await SendPostAsync<object, AcmeChallengeData>(new Uri(challenge.Uri), new {
                 resource = "challenge",
                 type = challenge.Type,
                 keyAuthorization = challenge.GetKeyAuthorization(Registration)

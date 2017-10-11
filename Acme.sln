@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AcmeDriver", "AcmeDriver\AcmeDriver.csproj", "{BBF21F51-828F-4CD4-BC87-738D3C0A626B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AcmeDriver", "AcmeDriver\AcmeDriver.csproj", "{BBF21F51-828F-4CD4-BC87-738D3C0A626B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AcmeDriver.Tests", "AcmeDriver.Tests\AcmeDriver.Tests.csproj", "{897B208B-5512-4434-85BB-BEF1DECC7ED2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +17,15 @@ Global
 		{BBF21F51-828F-4CD4-BC87-738D3C0A626B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBF21F51-828F-4CD4-BC87-738D3C0A626B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBF21F51-828F-4CD4-BC87-738D3C0A626B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{897B208B-5512-4434-85BB-BEF1DECC7ED2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{897B208B-5512-4434-85BB-BEF1DECC7ED2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{897B208B-5512-4434-85BB-BEF1DECC7ED2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{897B208B-5512-4434-85BB-BEF1DECC7ED2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E9ABA2A1-5836-4CB3-AF71-329357F99D1C}
 	EndGlobalSection
 EndGlobal

@@ -1,5 +1,9 @@
-using System.Security;
-using NUnit;
+using System;
+using System.Threading.Tasks;
+using NUnit.Framework;
+using System.IO;
+using System.Security.Cryptography;
+using Newtonsoft.Json;
 
 namespace AcmeDriver.Tests {
     [TestFixture]
@@ -20,27 +24,28 @@ namespace AcmeDriver.Tests {
                     client.Registration = reg;
                 }
 
-                var reg2 = await client.GetRegistrationAsync(reg.Location);
+                var authz = await client.NewAuthorizationAsync("domain.com");
 
-                var accountKey = client.Registration.GetJwkThumbprint();
-                var authz = await client.NewAuthorizationAsync("yogam.com.ua");
+                Console.WriteLine("Do one of the following:");
 
-                var httpChallenge = authz.Challenges.GetHttp01Challenge();
+                var httpChallenge = authz.GetHttp01Challenge(client.Registration);
                 if (httpChallenge != null) {
-                    Console.WriteLine($"FileName: {httpChallenge.Token}");
-                    Console.WriteLine($"FileDirectory = /.well-known/acme-challenge/");
-                    Console.WriteLine($"FileContent = {httpChallenge.GetKeyAuthorization(client.Registration)}");
+                    Console.WriteLine("Put file on your http server");
+                    Console.WriteLine($"FileName: {httpChallenge.FileName}");
+                    Console.WriteLine($"FileDirectory: {httpChallenge.FileDirectory}");
+                    Console.WriteLine($"FileContent: {httpChallenge.FileContent}");
+                    Console.WriteLine();
                 }
 
-                var dnsChallenge = authz.Challenges.GetDns01Challenge();
+                var dnsChallenge = authz.GetDns01Challenge(client.Registration);
                 if (dnsChallenge != null) {
-                    Console.WriteLine($"DnsName = _acme-challenge");
-                    Console.WriteLine($"DnsEntry = {Base64Url.Encode(_sha256.ComputeHash(Encoding.UTF8.GetBytes(dnsChallenge.GetKeyAuthorization(client.Registration))))}");
+                    Console.WriteLine("Create txt record");
+                    Console.WriteLine($"DnsRecord: {dnsChallenge.DnsRecord}");
+                    Console.WriteLine($"DnsRecordContent: {dnsChallenge.DnsRecordContent}");
+                    Console.WriteLine();
                 }
 
-                Console.WriteLine($"Location: {authz.Location}");
-
-                Console.WriteLine("go");
+                Console.WriteLine("And press any key");
                 Console.ReadKey();
 
                 var res = await client.CompleteChallengeAsync(dnsChallenge);
@@ -78,8 +83,6 @@ namespace AcmeDriver.Tests {
                 return null;
             }
         }
-
-        private static readonly SHA256 _sha256 = new SHA256CryptoServiceProvider();
 
         private static async Task<AcmeClientRegistration> LoadRegistrationAsync() {
             try {
