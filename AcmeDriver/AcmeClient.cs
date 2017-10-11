@@ -15,18 +15,29 @@ namespace AcmeDriver {
     public class AcmeClient : IDisposable {
 
         private string _nonce;
-        private HttpClient _client;
-        private AcmeDirectory _directory;
+        private readonly HttpClient _client;
+        private readonly AcmeDirectory _directory;
 
         public const string STAGING_URL = "https://acme-staging.api.letsencrypt.org";
 
-        public AcmeClient(AcmeDirectory directory) {
-            _directory = directory;
-            var handler = new AcmeExceptionHandler {
+        public AcmeClient(string baseUrl) {
+            _directory = new AcmeDirectory {
+                NewRegUrl = $"{baseUrl}/acme/new-reg",
+                NewAuthzUrl = $"{baseUrl}/acme/new-authz",
+                NewCertUrl = $"{baseUrl}/acme/new-cert",
+            };
+            _client = new HttpClient(new AcmeExceptionHandler {
                 InnerHandler = new HttpClientHandler {
                 }
-            };
-            _client = new HttpClient(handler);
+            });
+        }
+
+        public AcmeClient(AcmeDirectory directory) {
+            _directory = directory;
+            _client = new HttpClient(new AcmeExceptionHandler {
+                InnerHandler = new HttpClientHandler {
+                }
+            });
         }
 
         public static async Task<AcmeClient> CreateAcmeClient(string baseUrl) {
@@ -42,9 +53,9 @@ namespace AcmeDriver {
             }
         }
 
-        public async Task<AcmeDirectory> GetDirectoryAsync() {
-            return await SendGetAsync<AcmeDirectory>("directory");
-        }
+        // public async Task<AcmeDirectory> GetDirectoryAsync() {
+        //     return await SendGetAsync<AcmeDirectory>("directory");
+        // }
 
         public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, RSA rsa = null) {
             if (rsa == null) {
@@ -74,7 +85,6 @@ namespace AcmeDriver {
             await Task.FromResult(0);
         }
 
-
         public async Task<AcmeRegistration> AcceptAgreementAsync(string agreementUrl) {
             var data = await SendPostAsync<object, AcmeRegistration>($"/acme/reg/{Registration.Id}", new {
                 resource = "reg",
@@ -93,7 +103,7 @@ namespace AcmeDriver {
             });
         }
 
-        public async Task<Uri> NewOrderAsync(AcmeOrder order) {
+        public async Task<Uri> NewCertificateAsync(AcmeOrder order) {
             Uri location = null;
             await SendPostAsync<object>(_directory.NewCertUrl, new {
                 resource = "new-cert",

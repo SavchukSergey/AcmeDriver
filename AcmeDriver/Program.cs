@@ -28,7 +28,7 @@ namespace AcmeDriver {
         private static async Task MainAsync() {
             try {
                 var client = await AcmeClient.CreateAcmeClient(AcmeClient.STAGING_URL);
-                var dir = await client.GetDirectoryAsync();
+                // var dir = await client.GetDirectoryAsync();
                 var reg = await LoadRegistrationAsync();
                 if (reg == null) {
                     await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
@@ -69,7 +69,7 @@ namespace AcmeDriver {
                 } while (authz.Status == AcmeAuthorizationStatus.Pending);
 
                 var csr = await GetCsrAsync();
-                var order = await client.NewOrderAsync(new AcmeOrder {
+                var order = await client.NewCertificateAsync(new AcmeOrder {
                     Csr = csr,
                     NotBefore = DateTime.UtcNow,
                     NotAfter = DateTime.UtcNow.AddMonths(1)
