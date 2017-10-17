@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace AcmeDriver {
@@ -7,6 +8,8 @@ namespace AcmeDriver {
         public string Domain { get; set; }
 
         public AcmeChallengeData Data { get; set; }
+
+        public abstract Task<bool> Prevalidate();
 
     }
 }

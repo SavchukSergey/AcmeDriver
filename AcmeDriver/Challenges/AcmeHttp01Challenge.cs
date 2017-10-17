@@ -1,4 +1,6 @@
 using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace AcmeDriver {
 
@@ -13,6 +15,17 @@ namespace AcmeDriver {
         public string FileContent { get; set; }
 
         public string CurlCmd => $"curl {FileUri}";
+
+        public override async Task<bool> Prevalidate() {
+            try {
+                using (var client = new HttpClient()) {
+                    var responseContent = await client.GetStringAsync(FileUri);
+                   return responseContent == FileContent;
+                }
+            } catch {
+                return false;
+            }
+        }
 
     }
 
