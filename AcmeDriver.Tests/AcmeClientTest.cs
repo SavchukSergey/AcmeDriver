@@ -12,7 +12,7 @@ namespace AcmeDriver.Tests {
         [Test]
         public async Task WorkflowTest() {
             try {
-                var client = await AcmeClient.CreateAcmeClient(AcmeClient.STAGING_URL);
+                var client = await AcmeClient.CreateAcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL);
                 // var dir = await client.GetDirectoryAsync();
                 var reg = await LoadRegistrationAsync();
                 if (reg == null) {

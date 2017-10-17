@@ -3,6 +3,8 @@
 namespace AcmeDriver {
     public class AcmeDirectory {
 
+        public string DirectoryUrl { get; set; }
+
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-04</para>
         ///</summary>
@@ -68,6 +70,15 @@ namespace AcmeDriver {
         ///</summary>
         [JsonProperty("recover-reg")]
         public string RecoverRegUrl { get; set; }
+
+        public static AcmeDirectory FromBaseUrl(string baseUrl) {
+            return new AcmeDirectory {
+                DirectoryUrl = $"{baseUrl}/directory",
+                NewRegUrl = $"{baseUrl}/acme/new-reg",
+                NewAuthzUrl = $"{baseUrl}/acme/new-authz",
+                NewCertUrl = $"{baseUrl}/acme/new-cert",
+            };
+        }
 
     }
 }

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -14,30 +10,25 @@ using AcmeDriver.Handlers;
 namespace AcmeDriver {
     public class AcmeClient : IDisposable {
 
-        private string _nonce;
         private readonly HttpClient _client;
         private readonly AcmeDirectory _directory;
 
         public AcmeClientRegistration Registration { get; set; }
 
-        public const string STAGING_URL = "https://acme-staging.api.letsencrypt.org";
+        public string Nonce { get; set; }
 
-        public AcmeClient(string baseUrl) {
-            _directory = new AcmeDirectory {
-                NewRegUrl = $"{baseUrl}/acme/new-reg",
-                NewAuthzUrl = $"{baseUrl}/acme/new-authz",
-                NewCertUrl = $"{baseUrl}/acme/new-cert",
-            };
-            _client = new HttpClient(new AcmeExceptionHandler {
-                InnerHandler = new HttpClientHandler {
-                }
-            });
+        public const string LETS_ENCRYPT_STAGING_URL = "https://acme-staging.api.letsencrypt.org";
+        public const string LETS_ENCRYPT_PRODUCTION_URL = "https://acme-v01.api.letsencrypt.org";
+
+        public AcmeClient(string baseUrl) : this(AcmeDirectory.FromBaseUrl(baseUrl)) {
         }
 
         public AcmeClient(AcmeDirectory directory) {
             _directory = directory;
             _client = new HttpClient(new AcmeExceptionHandler {
-                InnerHandler = new HttpClientHandler {
+                InnerHandler = new AcmeNonceHandler(this) {
+                    InnerHandler = new HttpClientHandler {
+                    }
                 }
             });
         }
@@ -50,14 +41,13 @@ namespace AcmeDriver {
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var res = JsonConvert.DeserializeObject<AcmeDirectory>(responseContent);
                 var acmeClient = new AcmeClient(res);
-                acmeClient.CheckNonce(response);
                 return acmeClient;
             }
         }
 
-        // public async Task<AcmeDirectory> GetDirectoryAsync() {
-        //     return await SendGetAsync<AcmeDirectory>("directory");
-        // }
+        public async Task<AcmeDirectory> GetDirectoryAsync() {
+            return await SendGetAsync<AcmeDirectory>(new Uri(_directory.DirectoryUrl));
+        }
 
         #region Registrations
 
@@ -104,6 +94,7 @@ namespace AcmeDriver {
         #region Authorizations
 
         public async Task<AcmeAuthorization> NewAuthorizationAsync(AcmeIdentifier identifier) {
+            await EnsureNonceAsync();
             return await SendPostAsync<object, AcmeAuthorization>(new Uri(_directory.NewAuthzUrl), new {
                 resource = "new-authz",
                 identifier = new {
@@ -178,7 +169,7 @@ namespace AcmeDriver {
         public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge challenge) {
             return await CompleteChallengeAsync(challenge.Data);
         }
-        
+
         public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge) {
             var data = await SendPostAsync<object, AcmeChallengeData>(new Uri(challenge.Uri), new {
                 resource = "challenge",
@@ -189,6 +180,10 @@ namespace AcmeDriver {
         }
 
         #endregion
+
+        public async Task NewNonceAsync() {
+            await SendHeadAsync(new Uri(_directory.NewNonceUrl));
+        }
 
         private string ComputeSignature(byte[] data) {
             if (Registration == null) {
@@ -203,7 +198,7 @@ namespace AcmeDriver {
                 throw new Exception("registration is not set");
             }
             var protectedHeader = new {
-                nonce = _nonce
+                nonce = Nonce
             };
             var protectedHeaderJson = JsonConvert.SerializeObject(protectedHeader);
             var protectedHeaderData = Encoding.UTF8.GetBytes(protectedHeaderJson);
@@ -257,8 +252,13 @@ namespace AcmeDriver {
             return await ProcessRequestAsync(response, headersHandler);
         }
 
+        private async Task SendHeadAsync(Uri uri) {
+            var request = new HttpRequestMessage(HttpMethod.Head, uri);
+            var response = await _client.SendAsync(request);
+            await ProcessRequestAsync(response);
+        }
+
         private async Task<TResult> ProcessRequestAsync<TResult>(HttpResponseMessage response, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
-            CheckNonce(response);
             var responseContent = await response.Content.ReadAsStringAsync();
             var res = JsonConvert.DeserializeObject<TResult>(responseContent);
             headersHandler?.Invoke(response.Headers, res);
@@ -266,15 +266,16 @@ namespace AcmeDriver {
         }
 
         private async Task<string> ProcessRequestAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
-            CheckNonce(response);
             var res = await response.Content.ReadAsStringAsync();
             headersHandler?.Invoke(response.Headers, res);
             return res;
         }
 
-        private void CheckNonce(HttpResponseMessage response) {
-            if (response.Headers.TryGetValues("Replay-Nonce", out IEnumerable<string> replayNonce)) {
-                _nonce = replayNonce.FirstOrDefault();
+        private async Task EnsureNonceAsync() {
+            if (!string.IsNullOrWhiteSpace(_directory.NewNonceUrl)) {
+                await NewNonceAsync();
+            } else {
+                await GetDirectoryAsync();
             }
         }
 

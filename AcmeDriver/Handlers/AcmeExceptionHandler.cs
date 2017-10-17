@@ -10,8 +10,17 @@ namespace AcmeDriver.Handlers {
             var response = await base.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode) {
                 var content = await response.Content.ReadAsStringAsync();
-                var res = JsonConvert.DeserializeObject<AcmeExceptionInfo>(content);
-                throw new AcmeException(res);
+                var contentType = response.Content.Headers.ContentType.MediaType;
+                if (contentType != null && contentType.Contains("application") && contentType.Contains("json")) {
+                    var res = JsonConvert.DeserializeObject<AcmeExceptionInfo>(content);
+                    throw new AcmeException(res);
+                } else {
+                    throw new AcmeException(new AcmeExceptionInfo {
+                        Detail = content,
+                        Status = (int)response.StatusCode,
+                        Type = "http"
+                    });
+                }
             }
             return response;
         }
