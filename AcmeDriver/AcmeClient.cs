@@ -175,7 +175,7 @@ namespace AcmeDriver {
 
         #region Challenges
 
-        public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge2 challenge) {
+        public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge challenge) {
             return await CompleteChallengeAsync(challenge.Data);
         }
         

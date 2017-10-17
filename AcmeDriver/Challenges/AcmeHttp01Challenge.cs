@@ -2,7 +2,7 @@ using System;
 
 namespace AcmeDriver {
 
-    public class AcmeHttp01Challenge : AcmeChallenge2 {
+    public class AcmeHttp01Challenge : AcmeChallenge {
 
         public string FileName { get; set; }
 
@@ -11,6 +11,8 @@ namespace AcmeDriver {
         public Uri FileUri => new Uri($"http://{Domain}{FileDirectory}{FileName}");
 
         public string FileContent { get; set; }
+
+        public string CurlCmd => $"curl {FileUri}";
 
     }
 

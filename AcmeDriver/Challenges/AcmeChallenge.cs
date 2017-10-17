@@ -2,7 +2,7 @@ using System;
 using Newtonsoft.Json;
 
 namespace AcmeDriver {
-    public abstract class AcmeChallenge2 {
+    public abstract class AcmeChallenge {
 
         public string Domain { get; set; }
 
