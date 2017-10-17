@@ -21,7 +21,7 @@ namespace AcmeDriver {
 
         public string GoogleUiApiUrl => $"https://dns.google.com/query?name={DnsAddress}&type=TXT";
 
-        public override async Task<bool> Prevalidate() {
+        public override async Task<bool> PrevalidateAsync() {
             try {
                 using (var client = new HttpClient()) {
                     var responseContent = await client.GetStringAsync(GoogleApiUrl);

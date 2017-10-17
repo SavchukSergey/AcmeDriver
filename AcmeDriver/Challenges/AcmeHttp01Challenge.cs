@@ -16,7 +16,7 @@ namespace AcmeDriver {
 
         public string CurlCmd => $"curl {FileUri}";
 
-        public override async Task<bool> Prevalidate() {
+        public override async Task<bool> PrevalidateAsync() {
             try {
                 using (var client = new HttpClient()) {
                     var responseContent = await client.GetStringAsync(FileUri);

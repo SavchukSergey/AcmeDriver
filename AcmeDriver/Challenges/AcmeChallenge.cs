@@ -9,7 +9,7 @@ namespace AcmeDriver {
 
         public AcmeChallengeData Data { get; set; }
 
-        public abstract Task<bool> Prevalidate();
+        public abstract Task<bool> PrevalidateAsync();
 
     }
 }
