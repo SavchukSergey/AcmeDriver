@@ -7,6 +7,8 @@ namespace AcmeDriver {
             return content
                 .Replace("-----BEGIN NEW CERTIFICATE REQUEST-----", "")
                 .Replace("-----END NEW CERTIFICATE REQUEST-----", "")
+                .Replace("-----BEGIN CERTIFICATE REQUEST-----", "")
+                .Replace("-----END CERTIFICATE REQUEST-----", "")
                 .Trim();
         }
 
