@@ -1,5 +1,4 @@
 /**/bin/
 /**/obj/
 /_ReSharper.Caches/
-/.vs/**/*.suo
-/.vs/**/*.ide
+/.vs
