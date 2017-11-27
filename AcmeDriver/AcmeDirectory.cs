@@ -76,7 +76,7 @@ namespace AcmeDriver {
                 DirectoryUrl = $"{baseUrl}/directory",
                 NewRegUrl = $"{baseUrl}/acme/new-reg",
                 NewAuthzUrl = $"{baseUrl}/acme/new-authz",
-                NewCertUrl = $"{baseUrl}/acme/new-cert",
+                NewCertUrl = $"{baseUrl}/acme/new-cert"
             };
         }
 

@@ -46,12 +46,17 @@ namespace AcmeDriver {
         }
 
         public async Task<AcmeDirectory> GetDirectoryAsync() {
-            return await SendGetAsync<AcmeDirectory>(new Uri(_directory.DirectoryUrl));
+            return await GetDirectoryAsync(_directory.DirectoryUrl);
+        }
+
+        public async Task<AcmeDirectory> GetDirectoryAsync(string directoryUrl) {
+            return await SendGetAsync<AcmeDirectory>(new Uri(directoryUrl));
         }
 
         #region Registrations
 
         public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, RSA rsa = null) {
+            await EnsureNonceAsync();
             if (rsa == null) {
                 rsa = RSA.Create();
                 rsa.KeySize = 2048;
@@ -65,6 +70,7 @@ namespace AcmeDriver {
                 contact = contacts
             });
             reg.Id = data.Id;
+            reg.Location = data.Location;
             return data;
         }
 
@@ -144,6 +150,7 @@ namespace AcmeDriver {
         #region Certificates
 
         public async Task<Uri> NewCertificateAsync(AcmeOrder order) {
+            await NewNonceAsync();
             Uri location = null;
             await SendPostAsync<object>(new Uri(_directory.NewCertUrl), new {
                 resource = "new-cert",
@@ -171,6 +178,7 @@ namespace AcmeDriver {
         }
 
         public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge) {
+            await NewNonceAsync();
             var data = await SendPostAsync<object, AcmeChallengeData>(new Uri(challenge.Uri), new {
                 resource = "challenge",
                 type = challenge.Type,
@@ -182,7 +190,11 @@ namespace AcmeDriver {
         #endregion
 
         public async Task NewNonceAsync() {
-            await SendHeadAsync(new Uri(_directory.NewNonceUrl));
+            if (!string.IsNullOrWhiteSpace(_directory.NewNonceUrl)) {
+                await SendHeadAsync(new Uri(_directory.NewNonceUrl));
+            } else {
+                await GetDirectoryAsync();
+            }
         }
 
         private string ComputeSignature(byte[] data) {
