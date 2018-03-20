@@ -178,6 +178,12 @@ namespace AcmeDriver {
             }
         }
 
+        public async Task<byte[]> DownloadCertificateAsync(AcmeOrder order) {
+            using (var client = new HttpClient()) {
+                return await client.GetByteArrayAsync(order.Certificate);
+            }
+        }
+
         #endregion
 
         #region Challenges
