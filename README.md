@@ -1,10 +1,11 @@
 # Usage
 ```c#
-    using (var client = await AcmeClient.CreateAcmeClient(AcmeClient.STAGING_URL)) {
+    using (var client = await AcmeClient.CreateAcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL)) {
         await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
-        await client.AcceptRegistrationAgreementAsync(client.Registration.Location, "https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf");
+        await client.AcceptRegistrationAgreementAsync(client.Registration.Location, "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
 
-        var authz = await client.NewAuthorizationAsync("domain.com");
+        var order = await client.NewOrderAsync("domain.com");
+        var authz = order.Authorizations[0];
 
         Console.WriteLine("Do one of the following:");
 
@@ -35,18 +36,14 @@
         } while (authz.Status == AcmeAuthorizationStatus.Pending);
 
         var csr = await GetCsrAsync();
-        var order = await client.NewCertificateAsync(new AcmeOrder {
-            Csr = csr,
-            NotBefore = DateTime.UtcNow,
-            NotAfter = DateTime.UtcNow.AddMonths(1)
-        });
+        await client.FinalizeOrderAsync(order, csr);
 
         var crt = await client.DownloadCertificateAsync(order);
         Console.WriteLine(crt);
     }
 
-    async Task<string> GetCsrAsync() {
-        return Task.FromResult($"
+    Task<string> GetCsrAsync() {
+        return Task.FromResult($@"
 -----BEGIN NEW CERTIFICATE REQUEST-----
 ...
 -----END NEW CERTIFICATE REQUEST-----

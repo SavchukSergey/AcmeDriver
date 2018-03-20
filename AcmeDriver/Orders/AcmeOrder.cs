@@ -4,21 +4,25 @@ using Newtonsoft.Json;
 namespace AcmeDriver {
     public class AcmeOrder {
 
-        [JsonProperty("csr")]
-        public string Csr { get; set; }
-
-        [JsonProperty("notBefore")]
-        public DateTimeOffset NotBefore { get; set; }
-
-        [JsonProperty("notAfter")]
-        public DateTimeOffset NotAfter { get; set; }
-
         [JsonProperty("status")]
         public AcmeOrderStatus Status { get; set; }
 
         [JsonProperty("expires")]
-        public DateTimeOffset Expries { get; set; }
+        public DateTimeOffset Expires { get; set; }
 
+        [JsonProperty("identifiers")]
+        public AcmeIdentifier[] Identifiers { get; set; }
+
+        [JsonProperty("authorizations")]
+        public string[] Authorizations { get; set; }
+
+        [JsonProperty("finalize")]
+        public string Finalize { get; set; }
+
+        [JsonProperty("certificate")]
+        public string Certificate { get; set; }
+
+        [JsonIgnore]
         public Uri Location { get; set; }
 
     }

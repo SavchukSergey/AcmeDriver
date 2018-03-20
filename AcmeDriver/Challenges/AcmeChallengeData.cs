@@ -10,7 +10,7 @@ namespace AcmeDriver {
         [JsonProperty("status")]
         public string Status { get; set; }
 
-        [JsonProperty("uri")]
+        [JsonProperty("url")]
         public string Uri { get; set; }
 
         [JsonProperty("token")]

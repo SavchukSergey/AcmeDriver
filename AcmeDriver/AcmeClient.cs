@@ -17,8 +17,8 @@ namespace AcmeDriver {
 
         public string Nonce { get; set; }
 
-        public const string LETS_ENCRYPT_STAGING_URL = "https://acme-staging.api.letsencrypt.org";
-        public const string LETS_ENCRYPT_PRODUCTION_URL = "https://acme-v01.api.letsencrypt.org";
+        public const string LETS_ENCRYPT_STAGING_URL = "https://acme-staging-v02.api.letsencrypt.org";
+        public const string LETS_ENCRYPT_PRODUCTION_URL = "https://acme-v02.api.letsencrypt.org";
 
         public AcmeClient(string baseUrl) : this(AcmeDirectory.FromBaseUrl(baseUrl)) {
         }
@@ -65,9 +65,9 @@ namespace AcmeDriver {
                 Key = rsa
             };
             Registration = reg;
-            var data = await SendPostAsync<object, AcmeRegistration>(new Uri(_directory.NewRegUrl), new {
-                resource = "new-reg",
-                contact = contacts
+            var data = await SendPostAsync<object, AcmeRegistration>(new Uri(_directory.NewAccountUrl), new {
+                contact = contacts,
+                termsOfServiceAgreed = true
             });
             reg.Id = data.Id;
             reg.Location = data.Location;
@@ -147,20 +147,29 @@ namespace AcmeDriver {
 
         #endregion
 
-        #region Certificates
+        #region Orders
 
-        public async Task<Uri> NewCertificateAsync(AcmeOrder order) {
+        public async Task<AcmeOrder> GetOrderAsync(Uri location) {
+            return await SendGetAsync<AcmeOrder>(location);
+        }
+
+        public async Task<AcmeOrder> NewOrderAsync(AcmeOrder order) {
             await NewNonceAsync();
-            Uri location = null;
-            await SendPostAsync<object>(new Uri(_directory.NewCertUrl), new {
-                resource = "new-cert",
-                csr = Base64Url.Encode(order.Csr.GetPemCsrData()),
-                notBefore = order.NotBefore.ToRfc3339String(),
-                notAfter = order.NotAfter.ToRfc3339String(),
+            return await SendPostKidAsync<object, AcmeOrder>(new Uri(_directory.NewOrderUrl), new {
+                //csr = Base64Url.Encode(order.Csr.GetPemCsrData()),
+                identifiers = order.Identifiers,
             }, (headers, ord) => {
-                location = headers.Location;
+                ord.Location = headers.Location;
             });
-            return location;
+        }
+
+        public async Task<AcmeOrder> FinalizeOrderAsync(AcmeOrder order, string csr) {
+            await NewNonceAsync();
+            return await SendPostKidAsync<object, AcmeOrder>(new Uri(order.Finalize), new {
+                csr = Base64Url.Encode(csr.GetPemCsrData())
+            }, (headers, ord) => {
+                ord.Location = headers.Location;
+            });
         }
 
         public async Task<byte[]> DownloadCertificateAsync(Uri uri) {
@@ -179,8 +188,7 @@ namespace AcmeDriver {
 
         public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge) {
             await NewNonceAsync();
-            var data = await SendPostAsync<object, AcmeChallengeData>(new Uri(challenge.Uri), new {
-                resource = "challenge",
+            var data = await SendPostKidAsync<object, AcmeChallengeData>(new Uri(challenge.Uri), new {
                 type = challenge.Type,
                 keyAuthorization = challenge.GetKeyAuthorization(Registration)
             }, null);
@@ -205,12 +213,15 @@ namespace AcmeDriver {
             return Base64Url.Encode(signature);
         }
 
-        private string Sign(byte[] payload) {
+        private string Sign(Uri url, byte[] payload) {
             if (Registration == null) {
                 throw new Exception("registration is not set");
             }
             var protectedHeader = new {
-                nonce = Nonce
+                nonce = Nonce,
+                url = url.ToString(),
+                alg = "RS256",
+                jwk = Registration.GetJwk()
             };
             var protectedHeaderJson = JsonConvert.SerializeObject(protectedHeader);
             var protectedHeaderData = Encoding.UTF8.GetBytes(protectedHeaderJson);
@@ -223,11 +234,32 @@ namespace AcmeDriver {
             var json = new {
                 payload = payloadEncoded,
                 @protected = protectedHeaderEncoded,
-                header = new {
-                    typ = "JWT",
-                    alg = "RS256",
-                    jwk = Registration.GetJwk()
-                },
+                signature = ComputeSignature(Encoding.UTF8.GetBytes(tbs))
+            };
+            return JsonConvert.SerializeObject(json);
+        }
+
+        private string SignKid(Uri url, byte[] payload) {
+            if (Registration == null) {
+                throw new Exception("registration is not set");
+            }
+            var protectedHeader = new {
+                nonce = Nonce,
+                url = url.ToString(),
+                alg = "RS256",
+                kid = Registration.Location.ToString()
+            };
+            var protectedHeaderJson = JsonConvert.SerializeObject(protectedHeader);
+            var protectedHeaderData = Encoding.UTF8.GetBytes(protectedHeaderJson);
+            var protectedHeaderEncoded = Base64Url.Encode(protectedHeaderData);
+
+            var payloadEncoded = Base64Url.Encode(payload);
+
+            var tbs = protectedHeaderEncoded + "." + payloadEncoded;
+
+            var json = new {
+                payload = payloadEncoded,
+                @protected = protectedHeaderEncoded,
                 signature = ComputeSignature(Encoding.UTF8.GetBytes(tbs))
             };
             return JsonConvert.SerializeObject(json);
@@ -242,7 +274,25 @@ namespace AcmeDriver {
         private async Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler) where TResult : class {
             var dataContent = JsonConvert.SerializeObject(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
-            var signedContent = Sign(data);
+            var signedContent = Sign(uri, data);
+
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            return await ProcessRequestAsync(response, headersHandler);
+        }
+
+        private async Task<string> SendPostKidAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
+            var dataContent = JsonConvert.SerializeObject(model);
+            var data = Encoding.UTF8.GetBytes(dataContent);
+            var signedContent = SignKid(uri, data);
+
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            return await ProcessRequestAsync(response, headersHandler);
+        }
+
+        private async Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler) where TResult : class {
+            var dataContent = JsonConvert.SerializeObject(model);
+            var data = Encoding.UTF8.GetBytes(dataContent);
+            var signedContent = SignKid(uri, data);
 
             var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
             return await ProcessRequestAsync(response, headersHandler);
@@ -251,7 +301,7 @@ namespace AcmeDriver {
         private async Task<string> SendPostAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
             var dataContent = JsonConvert.SerializeObject(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
-            var signedContent = Sign(data);
+            var signedContent = Sign(uri, data);
 
             var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
             return await ProcessRequestAsync(response, headersHandler);

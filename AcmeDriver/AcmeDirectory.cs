@@ -8,25 +8,25 @@ namespace AcmeDriver {
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-04</para>
         ///</summary>
-        [JsonProperty("new-nonce")]
+        [JsonProperty("newNonce")]
         public string NewNonceUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-05</para>
         ///</summary>
-        [JsonProperty("new-account")]
+        [JsonProperty("newAccount")]
         public string NewAccountUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
         ///</summary>
-        [JsonProperty("key-change")]
+        [JsonProperty("keyChange")]
         public string KeyChangeUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-05</para>
         ///</summary>
-        [JsonProperty("new-order")]
+        [JsonProperty("newOrder")]
         public string NewOrderUrl { get; set; }
 
         ///<summary>
@@ -47,22 +47,15 @@ namespace AcmeDriver {
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-01</para>
         ///</summary>
-        [JsonProperty("revoke-cert")]
+        [JsonProperty("revokeCert")]
         public string RevokeCertUrl { get; set; }
 
 
         ///<summary>
         ///<para>Unavailable in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
         ///</summary>
-        [JsonProperty("new-authz")]
+        [JsonProperty("newAuthz")]
         public string NewAuthzUrl { get; set; }
-
-        ///<summary>
-        /// <para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-01</para>
-        /// <para>Removed in https://tools.ietf.org/html/draft-ietf-acme-acme-05. Use <see cref="M:NewAccountUrl" /></para>
-        ///</summary>
-        [JsonProperty("new-reg")]
-        public string NewRegUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-01</para>
@@ -74,7 +67,9 @@ namespace AcmeDriver {
         public static AcmeDirectory FromBaseUrl(string baseUrl) {
             return new AcmeDirectory {
                 DirectoryUrl = $"{baseUrl}/directory",
-                NewRegUrl = $"{baseUrl}/acme/new-reg",
+                NewNonceUrl = $"{baseUrl}/acme/new-nonce",
+                NewAccountUrl = $"{baseUrl}/acme/new-acct",
+                NewOrderUrl = $"{baseUrl}/acme/new-order",
                 NewAuthzUrl = $"{baseUrl}/acme/new-authz",
                 NewCertUrl = $"{baseUrl}/acme/new-cert"
             };

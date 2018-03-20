@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 namespace AcmeDriver {
     public class Program {
 
-        private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_PRODUCTION_URL);
+        private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL);
         private static AcmeAuthorization _authz;
+        private static AcmeOrder _order;
 
         public static async Task Main() {
             Console.WriteLine("AcmeDriver... ready");
@@ -51,6 +52,81 @@ namespace AcmeDriver {
                         case "accept-tos":
                             await _client.AcceptRegistrationAgreementAsync(_client.Registration.Location, "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
                             break;
+                        case "new-order":
+                            if (args.Length != 1) {
+                                ShowNewOrderHelp();
+                            } else {
+                                var now = DateTime.UtcNow;
+                                _order = await _client.NewOrderAsync(new AcmeOrder {
+                                    Identifiers = args.Select(arg => new AcmeIdentifier { Type = "dns", Value = arg }).ToArray(),
+                                });
+                                await SaveOrderAsync(_order, $"order_{_order.Identifiers[0].Value}.json");
+                                await ShowOrderInfoAsync(_order);
+                            }
+                            break;
+                        case "order":
+                            if (RequireOrder()) {
+                                _order = await _client.GetOrderAsync(_order.Location);
+                                await SaveOrderAsync(_order, $"order_{_order.Identifiers[0].Value}.json");
+                                await ShowOrderInfoAsync(_order);
+                            }
+                            break;
+                        case "finalize-order":
+                            if (RequireOrder()) {
+                                var csr = await GetCsrAsync(args[0]);
+                                await _client.FinalizeOrderAsync(_order, csr);
+                            }
+                            break;
+                        case "authzs":
+                            if (RequireOrder()) {
+                                _order = await _client.GetOrderAsync(_order.Location); //refresh order
+                                foreach (var authUri in _order.Authorizations) {
+                                    var authz = await _client.GetAuthorizationAsync(new Uri(authUri));
+                                    ShowChallengeInfo(authz);
+                                }
+                            }
+                            break;
+                        case "select-authz":
+                            if (RequireOrder()) {
+                                if (args.Length != 1 || !int.TryParse(args[0], out int index)) {
+                                    Console.WriteLine("Usage: select-authz [index]");
+                                } else if (index >= 0 && index < _order.Authorizations.Length) {
+                                    _authz = await _client.GetAuthorizationAsync(new Uri(_order.Authorizations[index]));
+                                } else {
+                                    Console.WriteLine($"authz[{index}] not found");
+                                }
+                            }
+                            break;
+                        case "authz":
+                            if (RequireAuthz()) {
+                                _authz = await _client.GetAuthorizationAsync(_authz.Location);
+                                ShowChallengeInfo(_authz);
+                            }
+                            break;
+                        case "complete-dns-01":
+                            if (RequireAuthz()) {
+                                var dnsChallenge = _authz.GetDns01Challenge(_client.Registration);
+                                var res = await _client.CompleteChallengeAsync(dnsChallenge);
+                            }
+                            break;
+                        case "complete-http-01":
+                            if (RequireAuthz()) {
+                                var httpChallenge = _authz.GetHttp01Challenge(_client.Registration);
+                                var res = await _client.CompleteChallengeAsync(httpChallenge);
+                            }
+                            break;
+                        case "prevalidate-dns-01":
+                            if (RequireAuthz()) {
+                                var dnsChallengePrevalidate = await _authz.GetDns01Challenge(_client.Registration).PrevalidateAsync();
+                                Console.WriteLine($"Status: {dnsChallengePrevalidate}");
+                            }
+                            break;
+                        case "prevalidate-http-01":
+                            if (RequireAuthz()) {
+                                var httpChallengePrevalidate = await _authz.GetHttp01Challenge(_client.Registration).PrevalidateAsync();
+                                Console.WriteLine($"Status: {httpChallengePrevalidate}");
+                            }
+                            break;
                         case "new-authz":
                             if (args.Length != 1) {
                                 ShowNewAuthzHelp();
@@ -66,84 +142,24 @@ namespace AcmeDriver {
                                 _authz = await LoadAuthorizationAsync($"authz_{args[0]}.json");
                             }
                             break;
-                        case "refresh-authz":
-                            if (_authz != null) {
-                                _authz = await _client.GetAuthorizationAsync(_authz.Location);
-                                await SaveAuthorizationAsync(_authz, $"authz_{_authz.Identifier.Value}.json");
-                                ShowChallengeInfo(_authz);
-                            } else {
-                                Console.WriteLine("No authorization is loaded");
-                            }
-                            break;
-                        case "authz":
-                            if (_authz != null) {
-                                ShowChallengeInfo(_authz);
-                            } else {
-                                Console.WriteLine("No authorization is loaded");
-                            }
-                            break;
-                        case "complete-dns-01":
-                            if (_authz != null) {
-                                var dnsChallenge = _authz.GetDns01Challenge(_client.Registration);
-                                var res = await _client.CompleteChallengeAsync(dnsChallenge);
-                            } else {
-                                Console.WriteLine("No authorization is loaded");
-                            }
-                            break;
-                        case "complete-http-01":
-                            if (_authz != null) {
-                                var httpChallenge = _authz.GetHttp01Challenge(_client.Registration);
-                                var res = await _client.CompleteChallengeAsync(httpChallenge);
-                            } else {
-                                Console.WriteLine("No authorization is loaded");
-                            }
-                            break;
-                        case "prevalidate-dns-01":
-                            if (_authz != null) {
-                                var dnsChallengePrevalidate = await _authz.GetDns01Challenge(_client.Registration).PrevalidateAsync();
-                                Console.WriteLine($"Status: {dnsChallengePrevalidate}");
-                            } else {
-                                Console.WriteLine("No authorization is loaded");
-                            }
-                            break;
-                        case "prevalidate-http-01":
-                            if (_authz != null) {
-                                var httpChallengePrevalidate = await _authz.GetHttp01Challenge(_client.Registration).PrevalidateAsync();
-                                Console.WriteLine($"Status: {httpChallengePrevalidate}");
-                            } else {
-                                Console.WriteLine("No authorization is loaded");
-                            }
-                            break;
-                        case "new-cert":
-                            if (args.Length != 1) {
-                                ShowNewCertHelp();
-                            } else {
-                                var csr = await GetCsrAsync(args[0]);
-                                var order = await _client.NewCertificateAsync(new AcmeOrder {
-                                    Csr = csr,
-                                    NotBefore = DateTime.UtcNow,
-                                    NotAfter = DateTime.UtcNow.AddMonths(3)
-                                });
-                                Console.WriteLine($"Certificate is available at {order}");
-                            }
-                            break;
                         case "help":
-                            Console.WriteLine("help                   Show this screen");
-                            Console.WriteLine("new-reg [contacts]+    New registration");
-                            Console.WriteLine("load-reg [filename]    Load registration from file");
-                            Console.WriteLine("save-reg [filename]    Save registration to file");
-                            Console.WriteLine("reg                    Show registration info");
-                            Console.WriteLine("accept-tos             Accept terms of use");
-                            Console.WriteLine("new-authz [domain]     Request new authorization");
-                            Console.WriteLine("load-authz [domain]    Load authorization");
-                            Console.WriteLine("refresh-authz          Refresh authorization status");
-                            Console.WriteLine("authz                  Show authorization info");
-                            Console.WriteLine("complete-dns-01        Complete dns-01 challenge");
-                            Console.WriteLine("complete-http-01       Complete http-01 challenge");
-                            Console.WriteLine("prevalidate-dns-01     Prevalidate dns-01 challenge");
-                            Console.WriteLine("prevalidate-http-01    Prevalidate http-01 challenge");
-                            Console.WriteLine("new-cert               Request new certificate");
-                            Console.WriteLine("exit                   Exit");
+                            Console.WriteLine("help                       Show this screen");
+                            Console.WriteLine("new-reg [contacts]+        New registration");
+                            Console.WriteLine("load-reg [filename]        Load registration from file");
+                            Console.WriteLine("save-reg [filename]        Save registration to file");
+                            Console.WriteLine("reg                        Show registration info");
+                            Console.WriteLine("new-order [identifier]+    Request new order");
+                            Console.WriteLine("order                      Refresh order & show order info");
+                            Console.WriteLine("finalize-order [csr-path]  Finalize order");
+                            Console.WriteLine("accept-tos                 Accept terms of use");
+                            Console.WriteLine("new-authz [domain]         Request new authorization");
+                            Console.WriteLine("load-authz [domain]        Load authorization");
+                            Console.WriteLine("authz                      Refresh authz & show authorization info");
+                            Console.WriteLine("complete-dns-01            Complete dns-01 challenge");
+                            Console.WriteLine("complete-http-01           Complete http-01 challenge");
+                            Console.WriteLine("prevalidate-dns-01         Prevalidate dns-01 challenge");
+                            Console.WriteLine("prevalidate-http-01        Prevalidate http-01 challenge");
+                            Console.WriteLine("exit                       Exit");
                             break;
                         case "exit":
                             return;
@@ -158,10 +174,40 @@ namespace AcmeDriver {
             }
         }
 
+        private static bool RequireOrder() {
+            if (_order == null) {
+                Console.WriteLine("create or select an order first");
+                return false;
+            }
+            return true;
+        }
+
+        private static bool RequireAuthz() {
+            if (_authz == null) {
+                Console.WriteLine("select an authorization first");
+                return false;
+            }
+            return true;
+        }
+
         private static void ShowRegistrationInfo(AcmeClientRegistration reg) {
             Console.WriteLine($"Id:       {reg.Id}");
             Console.WriteLine($"Location: {reg.Location}");
             Console.WriteLine($"JWK:      {reg.GetJwkThumbprint()}");
+        }
+
+        private static async Task ShowOrderInfoAsync(AcmeOrder order) {
+            Console.WriteLine($"Location: {order.Location}");
+            Console.WriteLine($"Status:        {order.Status}");
+            Console.WriteLine($"Expires:       {order.Expires:dd MMM yyy}");
+            Console.WriteLine($"Identifiers:   {order.Identifiers}");
+
+            Console.WriteLine();
+            Console.WriteLine("Authorizations:");
+            foreach (var authUri in order.Authorizations) {
+                var authz = await _client.GetAuthorizationAsync(new Uri(authUri));
+                ShowChallengeInfo(authz);
+            }
         }
 
         private static void ShowChallengeInfo(AcmeAuthorization authz) {
@@ -173,28 +219,36 @@ namespace AcmeDriver {
             Console.WriteLine("Challenges:");
             var httpChallenge = authz.GetHttp01Challenge(_client.Registration);
             if (httpChallenge != null) {
-                Console.WriteLine("http-01");
-                Console.WriteLine($"FileName:      {httpChallenge.FileName}");
-                Console.WriteLine($"FileDirectory: {httpChallenge.FileDirectory}");
-                Console.WriteLine($"FileContent:   {httpChallenge.FileContent}");
-                Console.WriteLine($"---------------");
-                Console.WriteLine($"uri:           {httpChallenge.Data.Uri}");
-                Console.WriteLine();
+                ShowChallengeInfo(httpChallenge);
             }
 
             var dnsChallenge = authz.GetDns01Challenge(_client.Registration);
             if (dnsChallenge != null) {
-                Console.WriteLine("dns-01");
-                Console.WriteLine($"DnsRecord:        {dnsChallenge.DnsRecord}");
-                Console.WriteLine($"DnsRecordType:    TXT");
-                Console.WriteLine($"DnsRecordContent: {dnsChallenge.DnsRecordContent}");
-                Console.WriteLine($"---------------");
-                Console.WriteLine($"uri:              {dnsChallenge.Data.Uri}");
-                Console.WriteLine($"nslookup:         {dnsChallenge.NslookupCmd}");
-                Console.WriteLine($"google dns:       {dnsChallenge.GoogleUiApiUrl}");
-                Console.WriteLine();
+                ShowChallengeInfo(dnsChallenge);
             }
+        }
 
+        private static void ShowChallengeInfo(AcmeHttp01Challenge httpChallenge) {
+            Console.WriteLine("http-01");
+            Console.WriteLine($"FileName:      {httpChallenge.FileName}");
+            Console.WriteLine($"FileDirectory: {httpChallenge.FileDirectory}");
+            Console.WriteLine($"FileContent:   {httpChallenge.FileContent}");
+            Console.WriteLine($"FileUri:       {httpChallenge.FileUri}");
+            Console.WriteLine($"---------------");
+            Console.WriteLine($"uri:           {httpChallenge.Data.Uri}");
+            Console.WriteLine();
+        }
+
+        private static void ShowChallengeInfo(AcmeDns01Challenge dnsChallenge) {
+            Console.WriteLine("dns-01");
+            Console.WriteLine($"DnsRecord:        {dnsChallenge.DnsRecord}");
+            Console.WriteLine($"DnsRecordType:    TXT");
+            Console.WriteLine($"DnsRecordContent: {dnsChallenge.DnsRecordContent}");
+            Console.WriteLine($"---------------");
+            Console.WriteLine($"uri:              {dnsChallenge.Data.Uri}");
+            Console.WriteLine($"nslookup:         {dnsChallenge.NslookupCmd}");
+            Console.WriteLine($"google dns:       {dnsChallenge.GoogleUiApiUrl}");
+            Console.WriteLine();
         }
 
         private static async Task<string> GetCsrAsync(string path) {
@@ -271,6 +325,19 @@ namespace AcmeDriver {
             }
         }
 
+        private static async Task SaveOrderAsync(AcmeOrder order, string filename) {
+            try {
+                var model = Convert(order);
+                var content = Serialize(model);
+                using (var file = File.Open(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)) {
+                    using (var writer = new StreamWriter(file)) {
+                        await writer.WriteAsync(content);
+                    }
+                }
+            } catch {
+            }
+        }
+
         private static AcmeRegistrationModel Convert(AcmeClientRegistration reg) {
             return new AcmeRegistrationModel {
                 Id = reg.Id,
@@ -296,6 +363,17 @@ namespace AcmeDriver {
                 Status = auth.Status,
                 Expires = auth.Expires,
                 Challenges = auth.Challenges.Select(c => Convert(c)).ToArray()
+            };
+        }
+
+        private static AcmeOrderModel Convert(AcmeOrder order) {
+            return new AcmeOrderModel {
+                Authorizations = order.Authorizations,
+                Expires = order.Expires,
+                Finalize = order.Finalize,
+                Identifiers = order.Identifiers,
+                Location = order.Location,
+                Status = order.Status,
             };
         }
 
@@ -339,6 +417,10 @@ namespace AcmeDriver {
             return JsonConvert.SerializeObject(auth, Formatting.Indented);
         }
 
+        private static string Serialize(AcmeOrderModel order) {
+            return JsonConvert.SerializeObject(order, Formatting.Indented);
+        }
+
         public class AcmeRegistrationModel {
 
             public long Id { get; set; }
@@ -375,6 +457,22 @@ namespace AcmeDriver {
 
         }
 
+
+        public class AcmeOrderModel {
+
+            public AcmeOrderStatus Status { get; set; }
+
+            public DateTimeOffset Expires { get; set; }
+
+            public AcmeIdentifier[] Identifiers { get; set; }
+
+            public string[] Authorizations { get; set; }
+
+            public string Finalize { get; set; }
+
+            public Uri Location { get; set; }
+        }
+
         #endregion
 
         #region Help
@@ -394,14 +492,14 @@ namespace AcmeDriver {
             Console.WriteLine("Usage: new-authz domain.com");
         }
 
+        private static void ShowNewOrderHelp() {
+            Console.WriteLine("new-order requests new order");
+            Console.WriteLine("Usage: new-order domain.com");
+        }
+
         private static void ShowLoadAuthzHelp() {
             Console.WriteLine("load-authz loads authrozation data from file");
             Console.WriteLine("Usage: load-authz domain.com");
-        }
-
-        private static void ShowNewCertHelp() {
-            Console.WriteLine("new-cert requests new certificate");
-            Console.WriteLine("Usage: new-cert pem-encoded-file.csr");
         }
 
         #endregion
