@@ -178,9 +178,9 @@ namespace AcmeDriver {
             }
         }
 
-        public async Task<byte[]> DownloadCertificateAsync(AcmeOrder order) {
+        public async Task<string> DownloadCertificateAsync(AcmeOrder order) {
             using (var client = new HttpClient()) {
-                return await client.GetByteArrayAsync(order.Certificate);
+                return await client.GetStringAsync(order.Certificate);
             }
         }
 

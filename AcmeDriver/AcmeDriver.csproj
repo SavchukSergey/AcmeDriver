@@ -4,7 +4,7 @@
     <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
     <Copyright>Copyright © 2018</Copyright>
     <ApplicationIcon />
-    <Version>1.0.0-alpha10</Version>
+    <Version>1.0.0-alpha11</Version>
     <Description>Acme Client Protocol Implementation</Description>
     <Authors>Sergey Savchuk</Authors>
     <RepositoryUrl>https://github.com/SavchukSergey/AcmeDriver</RepositoryUrl>
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net461'">
