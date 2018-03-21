@@ -86,9 +86,9 @@ namespace AcmeDriver {
             await Task.FromResult(0);
         }
 
-        public async Task<AcmeRegistration> AcceptRegistrationAgreementAsync(Uri registrationUri, string agreementUrl) {
+        public async Task<AcmeRegistration> AcceptRegistrationAgreementAsync(string agreementUrl) {
             //$"/acme/reg/{Registration.Id}"
-            var data = await SendPostAsync<object, AcmeRegistration>(registrationUri, new {
+            var data = await SendPostKidAsync<object, AcmeRegistration>(Registration.Location, new {
                 resource = "reg",
                 agreement = agreementUrl
             });
@@ -295,7 +295,7 @@ namespace AcmeDriver {
             return await ProcessRequestAsync(response, headersHandler);
         }
 
-        private async Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler) where TResult : class {
+        private async Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
             var dataContent = JsonConvert.SerializeObject(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);

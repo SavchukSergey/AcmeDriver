@@ -4,7 +4,14 @@
         await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
         await client.AcceptRegistrationAgreementAsync(client.Registration.Location, "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
 
-        var order = await client.NewOrderAsync("domain.com");
+        var order = await client.NewOrderAsync(new AcmeOrder {
+            Identifiers = new [] {
+                new AcmeIdentifier {
+                    Type = "dns",
+                    Value = "domain.com"
+                }
+            }
+        });
         var authz = order.Authorizations[0];
 
         Console.WriteLine("Do one of the following:");

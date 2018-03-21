@@ -50,7 +50,7 @@ namespace AcmeDriver {
                             }
                             break;
                         case "accept-tos":
-                            await _client.AcceptRegistrationAgreementAsync(_client.Registration.Location, "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
+                            await _client.AcceptRegistrationAgreementAsync("https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
                             break;
                         case "new-order":
                             if (args.Length != 1) {
