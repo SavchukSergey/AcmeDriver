@@ -202,7 +202,7 @@ namespace AcmeDriver {
             Console.WriteLine($"Location: {order.Location}");
             Console.WriteLine($"Status:        {order.Status}");
             Console.WriteLine($"Expires:       {order.Expires:dd MMM yyy}");
-            Console.WriteLine($"Identifiers:   {order.Identifiers}");
+            Console.WriteLine($"Identifiers:   {string.Join(", ", order.Identifiers.Select(item => item.ToString()).ToArray())}");
 
             Console.WriteLine();
             Console.WriteLine("Authorizations:");
@@ -392,7 +392,6 @@ namespace AcmeDriver {
 
         private static AcmeAuthorizationChallengeModel Convert(AcmeChallengeData challenge) {
             return new AcmeAuthorizationChallengeModel {
-                KeyAuthorization = challenge.KeyAuthorization,
                 Token = challenge.Token,
                 Uri = challenge.Uri,
                 Type = challenge.Type
@@ -401,7 +400,6 @@ namespace AcmeDriver {
 
         private static AcmeChallengeData Convert(AcmeAuthorizationChallengeModel challenge) {
             return new AcmeChallengeData {
-                KeyAuthorization = challenge.KeyAuthorization,
                 Token = challenge.Token,
                 Uri = challenge.Uri,
                 Type = challenge.Type
@@ -449,8 +447,6 @@ namespace AcmeDriver {
         }
 
         public class AcmeAuthorizationChallengeModel {
-
-            public string KeyAuthorization { get; set; }
 
             public string Token { get; set; }
 

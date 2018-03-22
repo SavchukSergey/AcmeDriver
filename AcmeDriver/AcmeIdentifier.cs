@@ -9,5 +9,9 @@ namespace AcmeDriver {
         [JsonProperty("value")]
         public string Value { get; set; }
 
+        public override string ToString() {
+            return $"{Type}:{Value}";
+        }
+
     }
 }

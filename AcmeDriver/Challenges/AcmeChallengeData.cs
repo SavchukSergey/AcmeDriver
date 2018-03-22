@@ -16,12 +16,6 @@ namespace AcmeDriver {
         [JsonProperty("token")]
         public string Token { get; set; }
 
-        [JsonProperty("validated")]
-        public DateTimeOffset? Validated { get; set; }
-
-        [JsonProperty("keyAuthorization")]
-        public string KeyAuthorization { get; set; }
-
         [JsonProperty("error")]
         public AcmeExceptionInfo Error { get; set; }
 
