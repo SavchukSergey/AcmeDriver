@@ -16,8 +16,8 @@ namespace AcmeDriver {
         [JsonProperty("challenges")]
         public AcmeChallengeData[] Challenges { get; set; }
 
-        [JsonProperty("combinations")]
-        public int[][] Combinations { get; set; }
+        [JsonProperty("wildcard")]
+        public bool Wildcard { get; set; }
 
     }
 }

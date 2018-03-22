@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace AcmeDriver {
     public class Program {
 
-        private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL);
+        private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_PRODUCTION_URL);
         private static AcmeAuthorization _authz;
         private static AcmeOrder _order;
 
@@ -53,7 +53,7 @@ namespace AcmeDriver {
                             await _client.AcceptRegistrationAgreementAsync("https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
                             break;
                         case "new-order":
-                            if (args.Length != 1) {
+                            if (args.Length < 1) {
                                 ShowNewOrderHelp();
                             } else {
                                 var now = DateTime.UtcNow;
@@ -214,6 +214,7 @@ namespace AcmeDriver {
             Console.WriteLine($"Authorization: {authz.Identifier.Value}");
             Console.WriteLine($"Status:        {authz.Status}");
             Console.WriteLine($"Expires:       {authz.Expires:dd MMM yyy}");
+            Console.WriteLine($"Wildcard:      {authz.Wildcard}");
 
             Console.WriteLine();
             Console.WriteLine("Challenges:");
