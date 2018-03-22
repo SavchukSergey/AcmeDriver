@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace AcmeDriver {
     public class Program {
 
-        private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_PRODUCTION_URL);
+        private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL);
         private static AcmeAuthorization _authz;
         private static AcmeOrder _order;
 
@@ -32,6 +32,8 @@ namespace AcmeDriver {
                                 ShowLoadRegHelp();
                             } else {
                                 var reg = await LoadRegistrationAsync(args[0]);
+                                if (reg != null) ShowRegistrationInfo(reg);
+                                else Console.WriteLine("Couldn't load registration");
                                 _client.Registration = reg;
                             }
                             break;

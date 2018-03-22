@@ -282,7 +282,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
@@ -291,7 +291,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
@@ -300,7 +300,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
@@ -309,7 +309,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/json"));
+            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
