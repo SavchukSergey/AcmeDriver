@@ -55,7 +55,16 @@ namespace AcmeDriver {
 
         #region Registrations
 
-        public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, PrivateJsonWebKey key) {
+        private PrivateJsonWebKey GenerateKey() {
+#if NETCOREAPP2_0
+            return EccPrivateJwk.Create();
+#else
+            return RsaPrivateJwk.Create();
+#endif
+        }
+
+        public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, PrivateJsonWebKey key = null) {
+            key = key ?? GenerateKey();
             await EnsureNonceAsync();
             var reg = new AcmeClientRegistration {
                 Key = key,
@@ -268,6 +277,9 @@ namespace AcmeDriver {
             var key = Registration?.Key?.Kty;
             switch(key) {
                 case "RSA": return "RS256";
+#if NETCOREAPP2_0
+                case "EC": return "ES256";
+#endif
                 default: throw new NotSupportedException($"{key} key is not supported");
             }
         }

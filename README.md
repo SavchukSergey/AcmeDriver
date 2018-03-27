@@ -1,7 +1,7 @@
 # Usage
 ```c#
     using (var client = await AcmeClient.CreateAcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL)) {
-        await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" }, RsaPrivateJwk.Create());
+        await client.NewRegistrationAsync(new[] { "mailto:savchuk.sergey@gmail.com" });
         await client.AcceptRegistrationAgreementAsync(client.Registration.Location, "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
 
         var order = await client.NewOrderAsync(new AcmeOrder {

@@ -26,7 +26,7 @@ namespace AcmeDriver {
                     var args = parts.Skip(1).ToArray();
                     switch (cmd) {
                         case "new-reg":
-                            await _client.NewRegistrationAsync(args, RsaPrivateJwk.Create());
+                            await _client.NewRegistrationAsync(args);
                             ShowRegistrationInfo(_client.Registration);
                             break;
                         case "load-reg":
