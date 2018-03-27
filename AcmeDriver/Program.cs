@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using AcmeDriver.JWK;
+using Newtonsoft.Json;
 
 namespace AcmeDriver {
     public class Program {
@@ -15,6 +16,7 @@ namespace AcmeDriver {
         public static async Task Main() {
             Console.WriteLine("AcmeDriver... ready");
             await TryLoadDefaultRegistration();
+
             while (true) {
                 try {
                     var line = Console.ReadLine();
@@ -24,7 +26,7 @@ namespace AcmeDriver {
                     var args = parts.Skip(1).ToArray();
                     switch (cmd) {
                         case "new-reg":
-                            await _client.NewRegistrationAsync(args);
+                            await _client.NewRegistrationAsync(args, RsaPrivateJwk.Create());
                             ShowRegistrationInfo(_client.Registration);
                             break;
                         case "load-reg":
@@ -46,6 +48,8 @@ namespace AcmeDriver {
                             break;
                         case "reg":
                             if (_client.Registration != null) {
+                                var reg = await _client.GetRegistrationAsync(_client.Registration.Location);
+                                Console.WriteLine(reg.ToString());
                                 ShowRegistrationInfo(_client.Registration);
                             } else {
                                 Console.WriteLine("No registration is loaded");
@@ -344,17 +348,15 @@ namespace AcmeDriver {
         private static AcmeRegistrationModel Convert(AcmeClientRegistration reg) {
             return new AcmeRegistrationModel {
                 Id = reg.Id,
-                Key = reg.Key.ExportToXml().ToString(),
+                Key = reg.Key,
                 Location = reg.Location
             };
         }
 
         private static AcmeClientRegistration Convert(AcmeRegistrationModel reg) {
-            var rsa = RSA.Create();
-            rsa.ImportFromXml(reg.Key);
             return new AcmeClientRegistration {
                 Id = reg.Id,
-                Key = rsa,
+                Key = reg.Key,
                 Location = reg.Location
             };
         }
@@ -407,7 +409,7 @@ namespace AcmeDriver {
         }
 
         private static T Deserialize<T>(string content) {
-            return JsonConvert.DeserializeObject<T>(content);
+            return JsonConvert.DeserializeObject<T>(content, new PrivateJwkConverter());
         }
 
         private static string Serialize(AcmeRegistrationModel reg) {
@@ -424,10 +426,13 @@ namespace AcmeDriver {
 
         public class AcmeRegistrationModel {
 
+            [JsonProperty("id")]
             public long Id { get; set; }
 
-            public string Key { get; set; }
+            [JsonProperty("key")]
+            public PrivateJsonWebKey Key { get; set; }
 
+            [JsonProperty("location")]
             public Uri Location { get; set; }
 
         }

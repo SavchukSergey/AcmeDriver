@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using AcmeDriver.Handlers;
+using AcmeDriver.JWK;
 
 namespace AcmeDriver {
     public class AcmeClient : IDisposable {
@@ -55,14 +55,10 @@ namespace AcmeDriver {
 
         #region Registrations
 
-        public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, RSA rsa = null) {
+        public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, PrivateJsonWebKey key) {
             await EnsureNonceAsync();
-            if (rsa == null) {
-                rsa = RSA.Create();
-                rsa.KeySize = 2048;
-            }
             var reg = new AcmeClientRegistration {
-                Key = rsa
+                Key = key,
             };
             Registration = reg;
             var data = await SendPostAsync<object, AcmeRegistration>(new Uri(_directory.NewAccountUrl), new {
@@ -75,10 +71,8 @@ namespace AcmeDriver {
         }
 
         public async Task<AcmeRegistration> GetRegistrationAsync(Uri registrationUri) {
-            //$"/acme/reg/{Registration.Id}"
-            var data = await SendPostAsync<object, AcmeRegistration>(registrationUri, new {
-                resource = "reg"
-            });
+            await EnsureNonceAsync();
+            var data = await SendPostKidAsync<object, AcmeRegistration>(registrationUri, new { });
             return data;
         }
 
@@ -156,7 +150,6 @@ namespace AcmeDriver {
         public async Task<AcmeOrder> NewOrderAsync(AcmeOrder order) {
             await NewNonceAsync();
             return await SendPostKidAsync<object, AcmeOrder>(new Uri(_directory.NewOrderUrl), new {
-                //csr = Base64Url.Encode(order.Csr.GetPemCsrData()),
                 identifiers = order.Identifiers,
             }, (headers, ord) => {
                 ord.Location = headers.Location;
@@ -215,7 +208,7 @@ namespace AcmeDriver {
             if (Registration == null) {
                 throw new Exception("registration is not set");
             }
-            var signature = Registration.Key.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            var signature = Registration.Key.SignData(data);
             return Base64Url.Encode(signature);
         }
 
@@ -226,8 +219,8 @@ namespace AcmeDriver {
             var protectedHeader = new {
                 nonce = Nonce,
                 url = url.ToString(),
-                alg = "RS256",
-                jwk = Registration.GetJwk()
+                alg = GetSignatureAlg(),
+                jwk = Registration.Key.GetPublicJwk()
             };
             var protectedHeaderJson = JsonConvert.SerializeObject(protectedHeader);
             var protectedHeaderData = Encoding.UTF8.GetBytes(protectedHeaderJson);
@@ -252,7 +245,7 @@ namespace AcmeDriver {
             var protectedHeader = new {
                 nonce = Nonce,
                 url = url.ToString(),
-                alg = "RS256",
+                alg = GetSignatureAlg(),
                 kid = Registration.Location.ToString()
             };
             var protectedHeaderJson = JsonConvert.SerializeObject(protectedHeader);
@@ -269,6 +262,14 @@ namespace AcmeDriver {
                 signature = ComputeSignature(Encoding.UTF8.GetBytes(tbs))
             };
             return JsonConvert.SerializeObject(json);
+        }
+
+        private string GetSignatureAlg() {
+            var key = Registration?.Key?.Kty;
+            switch(key) {
+                case "RSA": return "RS256";
+                default: throw new NotSupportedException($"{key} key is not supported");
+            }
         }
 
         private async Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model) where TResult : AcmeResource {

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace AcmeDriver {
     public class AcmeNonceHandler : DelegatingHandler {
 
-        private AcmeClient _client;
+        private readonly AcmeClient _client;
 
         public AcmeNonceHandler(AcmeClient client) {
             _client = client;
@@ -21,7 +21,6 @@ namespace AcmeDriver {
 
             return response;
         }
-
 
     }
 }
