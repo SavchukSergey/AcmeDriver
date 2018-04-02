@@ -36,7 +36,7 @@ namespace AcmeDriver {
         public static async Task<AcmeClient> CreateAcmeClient(string baseUrl) {
             using (var client = new HttpClient()) {
                 var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/directory");
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/jose+json"));
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 var response = await client.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var res = JsonConvert.DeserializeObject<AcmeDirectory>(responseContent);
@@ -56,18 +56,14 @@ namespace AcmeDriver {
         #region Registrations
 
         private PrivateJsonWebKey GenerateKey() {
-#if NETCOREAPP2_0
-            return EccPrivateJwk.Create();
-#else
             return RsaPrivateJwk.Create();
-#endif
         }
 
         public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, PrivateJsonWebKey key = null) {
             key = key ?? GenerateKey();
             await EnsureNonceAsync();
             var reg = new AcmeClientRegistration {
-                Key = key,
+                Key = key
             };
             Registration = reg;
             var data = await SendPostAsync<object, AcmeRegistration>(new Uri(_directory.NewAccountUrl), new {
@@ -275,11 +271,9 @@ namespace AcmeDriver {
 
         private string GetSignatureAlg() {
             var key = Registration?.Key?.Kty;
-            switch(key) {
+            switch (key) {
                 case "RSA": return "RS256";
-#if NETCOREAPP2_0
                 case "EC": return "ES256";
-#endif
                 default: throw new NotSupportedException($"{key} key is not supported");
             }
         }
@@ -295,7 +289,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
@@ -304,7 +298,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
@@ -313,7 +307,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
@@ -322,7 +316,7 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
-            var response = await _client.PostAsync(uri, new StringContent(signedContent, Encoding.UTF8, "application/jose+json"));
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
             return await ProcessRequestAsync(response, headersHandler);
         }
 
@@ -358,6 +352,16 @@ namespace AcmeDriver {
             } else {
                 await GetDirectoryAsync();
             }
+        }
+
+        private StringContent GetStringContent(string val) {
+            return new StringContent(val, null, "application/jose+json") {
+                Headers = {
+                    ContentType = {
+                        CharSet= string.Empty //letsencrypt fails if charset is specified
+                    }
+                }
+            };
         }
 
         public void Dispose() {
