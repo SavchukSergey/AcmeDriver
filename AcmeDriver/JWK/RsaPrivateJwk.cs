@@ -50,6 +50,19 @@ namespace AcmeDriver.JWK {
             };
         }
 
+        public RSAParameters ExportParameters() {
+            return new RSAParameters {
+                Modulus = Base64Url.Decode(Modulus),
+                Exponent = Base64Url.Decode(Exponent),
+                D = Base64Url.Decode(D),
+                P = Base64Url.Decode(P),
+                Q = Base64Url.Decode(Q),
+                DP = Base64Url.Decode(DP),
+                DQ = Base64Url.Decode(DQ),
+                InverseQ = Base64Url.Decode(InverseQ)
+            };
+        }
+
         public override PublicJsonWebKey GetPublicJwk() {
             return new RsaPublicJwk {
                 Modulus = Modulus,
