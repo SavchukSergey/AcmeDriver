@@ -36,7 +36,7 @@ namespace AcmeDriver {
         public static async Task<AcmeClient> CreateAcmeClient(string baseUrl) {
             using (var client = new HttpClient()) {
                 var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/directory");
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/jose+json"));
                 var response = await client.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var res = JsonConvert.DeserializeObject<AcmeDirectory>(responseContent);
