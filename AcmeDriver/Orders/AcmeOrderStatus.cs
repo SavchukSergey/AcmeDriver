@@ -3,6 +3,7 @@ namespace AcmeDriver {
         Invalid,
         Pending,
         Processing,
-        Valid
+		Valid,
+        Ready
     }
 }
