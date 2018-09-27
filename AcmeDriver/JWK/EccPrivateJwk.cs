@@ -1,6 +1,7 @@
 ﻿#if (NETCOREAPP2_0 || NETCOREAPP2_1)
 
 using Newtonsoft.Json;
+using System;
 using System.Security.Cryptography;
 
 namespace AcmeDriver.JWK {
@@ -45,7 +46,7 @@ namespace AcmeDriver.JWK {
         }
 
         public override byte[] SignData(byte[] data) {
-            var curve = ECCurve.NamedCurves.nistP256;
+            var curve = GetCurve();
             var args = new ECParameters {
                 Curve = curve,
                 D = Base64Url.Decode(D),
@@ -57,6 +58,19 @@ namespace AcmeDriver.JWK {
 
             var ecdsa = ECDsa.Create(args);
             return ecdsa.SignData(data, HashAlgorithmName.SHA256);
+        }
+
+        private ECCurve GetCurve() {
+            switch (Curve) {
+                case "P-256":
+                    return ECCurve.NamedCurves.nistP256;
+                case "P-384":
+                    return ECCurve.NamedCurves.nistP384;
+                case "P-521":
+                    return ECCurve.NamedCurves.nistP521;
+                default:
+                    return ECCurve.CreateFromFriendlyName(Curve);
+            }
         }
 
     }
