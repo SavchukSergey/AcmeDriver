@@ -270,12 +270,7 @@ namespace AcmeDriver {
         }
 
         private string GetSignatureAlg() {
-            var key = Registration?.Key?.Kty;
-            switch (key) {
-                case "RSA": return "RS256";
-                case "EC": return "ES256";
-                default: throw new NotSupportedException($"{key} key is not supported");
-            }
+            return Registration?.Key?.SignatureAlgorithmName;
         }
 
         private async Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model) where TResult : AcmeResource {

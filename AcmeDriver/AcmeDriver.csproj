@@ -4,7 +4,7 @@
     <TargetFrameworks>netcoreapp2.1;netcoreapp2.0;net461</TargetFrameworks>
     <Copyright>Copyright © 2018</Copyright>
     <ApplicationIcon />
-    <Version>1.0.8</Version>
+    <Version>1.0.9</Version>
     <Description>Acme Client Protocol Implementation</Description>
     <Authors>Sergey Savchuk</Authors>
     <RepositoryUrl>https://github.com/SavchukSergey/AcmeDriver</RepositoryUrl>

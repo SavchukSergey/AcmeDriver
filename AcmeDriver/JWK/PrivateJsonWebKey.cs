@@ -5,5 +5,7 @@
 
         public abstract byte[] SignData(byte[] data);
 
+        public abstract string SignatureAlgorithmName { get; }
+        
     }
 }

@@ -27,7 +27,7 @@ namespace AcmeDriver.JWK {
 
         public static EccPublicJwk From(ECParameters publicKey) {
             return new EccPublicJwk {
-                Curve = "P-256",
+                Curve = ECUtils.GetFipsCurveName(publicKey.Curve),
                 X = Base64Url.Encode(publicKey.Q.X),
                 Y = Base64Url.Encode(publicKey.Q.Y)
             };

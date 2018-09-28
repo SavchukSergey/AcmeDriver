@@ -30,6 +30,8 @@ namespace AcmeDriver.JWK {
 
         public override string Kty => "RSA";
 
+        public override string SignatureAlgorithmName => "RS256";
+
         public static RsaPrivateJwk Create() {
             var rsa = RSA.Create();
             rsa.KeySize = 2048;
