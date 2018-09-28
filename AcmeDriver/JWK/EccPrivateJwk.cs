@@ -79,7 +79,7 @@ namespace AcmeDriver.JWK {
                     case "P-256":
                         return "ES256";
                     case "P-384":
-                        return "ES84";
+                        return "ES384";
                     case "P-521":
                         return "ES512";
                     default:
