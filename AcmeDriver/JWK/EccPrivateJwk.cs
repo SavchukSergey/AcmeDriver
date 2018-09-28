@@ -94,27 +94,37 @@ namespace AcmeDriver.JWK {
             if (!string.IsNullOrWhiteSpace(a.Oid?.Value) && !string.IsNullOrWhiteSpace(b.Oid?.Value)) {
                 if (a.Oid.Value == b.Oid.Value) return true;
             }
-            if (a.CurveType != b.CurveType) {
-                return false;
+            if (HasExplicitData(a) && HasExplicitData(b)) {
+                if (new BigInteger(a.A) != new BigInteger(b.A)) {
+                    return false;
+                }
+                if (new BigInteger(a.B) != new BigInteger(b.B)) {
+                    return false;
+                }
+                if (new BigInteger(a.Cofactor) != new BigInteger(b.Cofactor)) {
+                    return false;
+                }
+                if (new BigInteger(a.Order) != new BigInteger(b.Order)) {
+                    return false;
+                }
+                if (new BigInteger(a.G.X) != new BigInteger(b.G.X)) {
+                    return false;
+                }
+                if (new BigInteger(a.G.Y) != new BigInteger(b.G.Y)) {
+                    return false;
+                }
+                return true;
             }
-            if (new BigInteger(a.A) != new BigInteger(b.A)) {
-                return false;
-            }
-            if (new BigInteger(a.B) != new BigInteger(b.B)) {
-                return false;
-            }
-            if (new BigInteger(a.Cofactor) != new BigInteger(b.Cofactor)) {
-                return false;
-            }
-            if (new BigInteger(a.G.X) != new BigInteger(b.G.X)) {
-                return false;
-            }
-            if (new BigInteger(a.G.Y) != new BigInteger(b.G.Y)) {
-                return false;
-            }
-            if (new BigInteger(a.Order) != new BigInteger(b.Order)) {
-                return false;
-            }
+            return false;
+        }
+
+        private static bool HasExplicitData(ECCurve curve) {
+            if (curve.A == null || curve.A.Length == 0) return false;
+            if (curve.B == null || curve.B.Length == 0) return false;
+            if (curve.Cofactor == null || curve.Cofactor.Length == 0) return false;
+            if (curve.Order == null || curve.Order.Length == 0) return false;
+            if (curve.G.X == null || curve.G.X.Length == 0) return false;
+            if (curve.G.Y == null || curve.G.Y.Length == 0) return false;
             return true;
         }
 
