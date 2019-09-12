@@ -19,7 +19,7 @@ namespace AcmeDriver {
         public override async Task<bool> PrevalidateAsync() {
             try {
                 using (var client = new HttpClient()) {
-                    var responseContent = await client.GetStringAsync(FileUri);
+                    var responseContent = await client.GetStringAsync(FileUri).ConfigureAwait(false);
                    return responseContent == FileContent;
                 }
             } catch {

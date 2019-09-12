@@ -24,7 +24,7 @@ namespace AcmeDriver {
         public override async Task<bool> PrevalidateAsync() {
             try {
                 using (var client = new HttpClient()) {
-                    var responseContent = await client.GetStringAsync(GoogleApiUrl);
+                    var responseContent = await client.GetStringAsync(GoogleApiUrl).ConfigureAwait(false);
                     var res = JsonConvert.DeserializeObject<GoogleDnsApiResponse>(responseContent);
                     return res.Answers.Any(a => a.Type == GoogleDnsRecordType.TXT && (a.Data == DnsRecordContent || a.Data == $"\"{DnsRecordContent}\""));
                 }

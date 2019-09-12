@@ -37,20 +37,20 @@ namespace AcmeDriver {
             using (var client = new HttpClient()) {
                 var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/directory");
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                var response = await client.SendAsync(request);
-                var responseContent = await response.Content.ReadAsStringAsync();
+                var response = await client.SendAsync(request).ConfigureAwait(false);
+                var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var res = JsonConvert.DeserializeObject<AcmeDirectory>(responseContent);
                 var acmeClient = new AcmeClient(res);
                 return acmeClient;
             }
         }
 
-        public async Task<AcmeDirectory> GetDirectoryAsync() {
-            return await GetDirectoryAsync(_directory.DirectoryUrl);
+        public Task<AcmeDirectory> GetDirectoryAsync() {
+            return GetDirectoryAsync(_directory.DirectoryUrl);
         }
 
-        public async Task<AcmeDirectory> GetDirectoryAsync(string directoryUrl) {
-            return await SendGetAsync<AcmeDirectory>(new Uri(directoryUrl));
+        public Task<AcmeDirectory> GetDirectoryAsync(string directoryUrl) {
+            return SendGetAsync<AcmeDirectory>(new Uri(directoryUrl));
         }
 
         #region Registrations
@@ -61,7 +61,7 @@ namespace AcmeDriver {
 
         public async Task<AcmeRegistration> NewRegistrationAsync(string[] contacts, PrivateJsonWebKey key = null) {
             key = key ?? GenerateKey();
-            await EnsureNonceAsync();
+            await EnsureNonceAsync().ConfigureAwait(false);
             var reg = new AcmeClientRegistration {
                 Key = key
             };
@@ -69,29 +69,28 @@ namespace AcmeDriver {
             var data = await SendPostAsync<object, AcmeRegistration>(new Uri(_directory.NewAccountUrl), new {
                 contact = contacts,
                 termsOfServiceAgreed = true
-            });
+            }).ConfigureAwait(false);
             reg.Id = data.Id;
             reg.Location = data.Location;
             return data;
         }
 
         public async Task<AcmeRegistration> GetRegistrationAsync(Uri registrationUri) {
-            await EnsureNonceAsync();
-            var data = await SendPostKidAsync<object, AcmeRegistration>(registrationUri, new { });
+            await EnsureNonceAsync().ConfigureAwait(false);
+            var data = await SendPostKidAsync<object, AcmeRegistration>(registrationUri, new { }).ConfigureAwait(false);
             return data;
         }
 
-        public async Task UpdateRegistrationAsync(Uri registrationUri) {
-            await Task.FromResult(0);
+        public Task UpdateRegistrationAsync(Uri registrationUri) {
+            return Task.CompletedTask;
         }
 
-        public async Task<AcmeRegistration> AcceptRegistrationAgreementAsync(string agreementUrl) {
+        public Task<AcmeRegistration> AcceptRegistrationAgreementAsync(string agreementUrl) {
             //$"/acme/reg/{Registration.Id}"
-            var data = await SendPostKidAsync<object, AcmeRegistration>(Registration.Location, new {
+            return SendPostKidAsync<object, AcmeRegistration>(Registration.Location, new {
                 resource = "reg",
                 agreement = agreementUrl
             });
-            return data;
         }
 
         #endregion
@@ -99,25 +98,25 @@ namespace AcmeDriver {
         #region Authorizations
 
         public async Task<AcmeAuthorization> NewAuthorizationAsync(AcmeIdentifier identifier) {
-            await EnsureNonceAsync();
+            await EnsureNonceAsync().ConfigureAwait(false);
             return await SendPostAsync<object, AcmeAuthorization>(new Uri(_directory.NewAuthzUrl), new {
                 resource = "new-authz",
                 identifier = new {
                     type = identifier.Type,
                     value = identifier.Value
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
-        public async Task<AcmeAuthorization> NewAuthorizationAsync(string domainName) {
-            return await NewAuthorizationAsync(new AcmeIdentifier {
+        public Task<AcmeAuthorization> NewAuthorizationAsync(string domainName) {
+            return NewAuthorizationAsync(new AcmeIdentifier {
                 Type = "dns",
                 Value = domainName
             });
         }
 
         public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
-            var data = await SendGetAsync<AcmeAuthorization>(location);
+            var data = await SendGetAsync<AcmeAuthorization>(location).ConfigureAwait(false);
             data.Location = location;
             return data;
         }
@@ -126,8 +125,8 @@ namespace AcmeDriver {
         ///<para>Deactivates authorization.</para>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
         ///</summary>
-        public async Task DeactivateAuthorizationAsync(Uri authorizationUri) {
-            await SendPostAsync(authorizationUri, new {
+        public Task DeactivateAuthorizationAsync(Uri authorizationUri) {
+            return SendPostAsync(authorizationUri, new {
                 status = AcmeAuthorizationStatus.Deactivated.ToString().ToLower()
             });
         }
@@ -137,8 +136,8 @@ namespace AcmeDriver {
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-02</para>
         ///<para>Removed in https://tools.ietf.org/html/draft-ietf-acme-acme-03. Use <see cref="M:DeactivateAuthorizationAsync" /></para>
         ///</summary>
-        public async Task DeleteAuthorizationAsync(Uri authorizationUri) {
-            await SendPostAsync(authorizationUri, new {
+        public Task DeleteAuthorizationAsync(Uri authorizationUri) {
+            return SendPostAsync(authorizationUri, new {
                 resource = "authz",
                 delete = true
             });
@@ -148,37 +147,37 @@ namespace AcmeDriver {
 
         #region Orders
 
-        public async Task<AcmeOrder> GetOrderAsync(Uri location) {
-            return await SendGetAsync<AcmeOrder>(location);
+        public Task<AcmeOrder> GetOrderAsync(Uri location) {
+            return SendGetAsync<AcmeOrder>(location);
         }
 
         public async Task<AcmeOrder> NewOrderAsync(AcmeOrder order) {
-            await NewNonceAsync();
+            await NewNonceAsync().ConfigureAwait(false);
             return await SendPostKidAsync<object, AcmeOrder>(new Uri(_directory.NewOrderUrl), new {
                 identifiers = order.Identifiers,
             }, (headers, ord) => {
                 ord.Location = headers.Location;
-            });
+            }).ConfigureAwait(false);
         }
 
         public async Task<AcmeOrder> FinalizeOrderAsync(AcmeOrder order, string csr) {
-            await NewNonceAsync();
+            await NewNonceAsync().ConfigureAwait(false);
             return await SendPostKidAsync<object, AcmeOrder>(new Uri(order.Finalize), new {
                 csr = Base64Url.Encode(csr.GetPemCsrData())
             }, (headers, ord) => {
                 ord.Location = headers.Location;
-            });
+            }).ConfigureAwait(false);
         }
 
         public async Task<byte[]> DownloadCertificateAsync(Uri uri) {
             using (var client = new HttpClient()) {
-                return await client.GetByteArrayAsync(uri);
+                return await client.GetByteArrayAsync(uri).ConfigureAwait(false);
             }
         }
 
         public async Task<string> DownloadCertificateAsync(AcmeOrder order) {
             using (var client = new HttpClient()) {
-                return await client.GetStringAsync(order.Certificate);
+                return await client.GetStringAsync(order.Certificate).ConfigureAwait(false);
             }
         }
 
@@ -186,16 +185,16 @@ namespace AcmeDriver {
 
         #region Challenges
 
-        public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge challenge) {
-            return await CompleteChallengeAsync(challenge.Data);
+        public Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge challenge) {
+            return CompleteChallengeAsync(challenge.Data);
         }
 
         public async Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge) {
-            await NewNonceAsync();
+            await NewNonceAsync().ConfigureAwait(false);
             var data = await SendPostKidAsync<object, AcmeChallengeData>(new Uri(challenge.Uri), new {
                 type = challenge.Type,
                 keyAuthorization = challenge.GetKeyAuthorization(Registration)
-            }, null);
+            }, null).ConfigureAwait(false);
             return data;
         }
 
@@ -203,9 +202,9 @@ namespace AcmeDriver {
 
         public async Task NewNonceAsync() {
             if (!string.IsNullOrWhiteSpace(_directory.NewNonceUrl)) {
-                await SendHeadAsync(new Uri(_directory.NewNonceUrl));
+                await SendHeadAsync(new Uri(_directory.NewNonceUrl)).ConfigureAwait(false);
             } else {
-                await GetDirectoryAsync();
+                await GetDirectoryAsync().ConfigureAwait(false);
             }
         }
 
@@ -273,8 +272,8 @@ namespace AcmeDriver {
             return Registration?.Key?.SignatureAlgorithmName;
         }
 
-        private async Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model) where TResult : AcmeResource {
-            return await SendPostAsync<TSource, TResult>(uri, model, (headers, authz) => {
+        private Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model) where TResult : AcmeResource {
+            return SendPostAsync<TSource, TResult>(uri, model, (headers, authz) => {
                 authz.Location = headers.Location;
             });
         }
@@ -284,8 +283,8 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
-            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
-            return await ProcessRequestAsync(response, headersHandler);
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
         private async Task<string> SendPostKidAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
@@ -293,8 +292,8 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
-            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
-            return await ProcessRequestAsync(response, headersHandler);
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
         private async Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
@@ -302,8 +301,8 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
-            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
-            return await ProcessRequestAsync(response, headersHandler);
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
         private async Task<string> SendPostAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
@@ -311,41 +310,41 @@ namespace AcmeDriver {
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
-            var response = await _client.PostAsync(uri, GetStringContent(signedContent));
-            return await ProcessRequestAsync(response, headersHandler);
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
         private async Task<TResult> SendGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            var response = await _client.SendAsync(request);
-            return await ProcessRequestAsync(response, headersHandler);
+            var response = await _client.SendAsync(request).ConfigureAwait(false);
+            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
         private async Task SendHeadAsync(Uri uri) {
             var request = new HttpRequestMessage(HttpMethod.Head, uri);
-            var response = await _client.SendAsync(request);
-            await ProcessRequestAsync(response);
+            var response = await _client.SendAsync(request).ConfigureAwait(false);
+            await ProcessRequestAsync(response).ConfigureAwait(false);
         }
 
         private async Task<TResult> ProcessRequestAsync<TResult>(HttpResponseMessage response, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
-            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             var res = JsonConvert.DeserializeObject<TResult>(responseContent);
             headersHandler?.Invoke(response.Headers, res);
             return res;
         }
 
         private async Task<string> ProcessRequestAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
-            var res = await response.Content.ReadAsStringAsync();
+            var res = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             headersHandler?.Invoke(response.Headers, res);
             return res;
         }
 
         private async Task EnsureNonceAsync() {
             if (!string.IsNullOrWhiteSpace(_directory.NewNonceUrl)) {
-                await NewNonceAsync();
+                await NewNonceAsync().ConfigureAwait(false);
             } else {
-                await GetDirectoryAsync();
+                await GetDirectoryAsync().ConfigureAwait(false);
             }
         }
 
