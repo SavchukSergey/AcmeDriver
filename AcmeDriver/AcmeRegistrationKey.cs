@@ -10,7 +10,7 @@ namespace AcmeDriver {
         public string Modulus { get; set; }
 
         [JsonProperty("e")]
-        public string Exponent{ get; set; }
+        public string Exponent { get; set; }
 
     }
 }
