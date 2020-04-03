@@ -169,16 +169,12 @@ namespace AcmeDriver {
             }).ConfigureAwait(false);
         }
 
-        public async Task<byte[]> DownloadCertificateAsync(Uri uri) {
-            using (var client = new HttpClient()) {
-                return await client.GetByteArrayAsync(uri).ConfigureAwait(false);
-            }
+        public Task<byte[]> DownloadCertificateAsync(Uri uri) {
+            return SendPostAsGetBytesAsync(uri);
         }
 
-        public async Task<string> DownloadCertificateAsync(AcmeOrder order) {
-            using (var client = new HttpClient()) {
-                return await client.GetStringAsync(order.Certificate).ConfigureAwait(false);
-            }
+        public Task<string> DownloadCertificateAsync(AcmeOrder order) {
+            return SendPostAsGetStringAsync(new Uri(order.Certificate));
         }
 
         #endregion
@@ -322,13 +318,28 @@ namespace AcmeDriver {
         }
 
         private async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+            var response = await SendPostAsGetResponseAsync(uri).ConfigureAwait(false);
+            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
+        }
+
+        private async Task<string> SendPostAsGetStringAsync(Uri uri, Action<HttpResponseHeaders, string> headersHandler = null) {
+            var response = await SendPostAsGetResponseAsync(uri).ConfigureAwait(false);
+            return await ProcessRequestStringAsync(response, headersHandler).ConfigureAwait(false);
+        }
+
+        private async Task<byte[]> SendPostAsGetBytesAsync(Uri uri, Action<HttpResponseHeaders, byte[]> headersHandler = null) {
+            var response = await SendPostAsGetResponseAsync(uri).ConfigureAwait(false);
+            return await ProcessRequestBytesAsync(response, headersHandler).ConfigureAwait(false);
+        }
+
+        private async Task<HttpResponseMessage> SendPostAsGetResponseAsync(Uri uri) {
             await EnsureNonceAsync();
 
             var data = new byte[0];
             var signedContent = SignKid(uri, data);
 
             var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
-            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
+            return response;
         }
 
         private async Task SendHeadAsync(Uri uri) {
@@ -342,6 +353,18 @@ namespace AcmeDriver {
             var res = JsonConvert.DeserializeObject<TResult>(responseContent);
             headersHandler?.Invoke(response.Headers, res);
             return res;
+        }
+
+        private async Task<string> ProcessRequestStringAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            headersHandler?.Invoke(response.Headers, responseContent);
+            return responseContent;
+        }
+
+        private async Task<byte[]> ProcessRequestBytesAsync(HttpResponseMessage response, Action<HttpResponseHeaders, byte[]> headersHandler = null) {
+            var responseContent = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            headersHandler?.Invoke(response.Headers, responseContent);
+            return responseContent;
         }
 
         private async Task<string> ProcessRequestAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
