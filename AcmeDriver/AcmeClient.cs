@@ -148,7 +148,7 @@ namespace AcmeDriver {
         #region Orders
 
         public Task<AcmeOrder> GetOrderAsync(Uri location) {
-            return SendGetAsync<AcmeOrder>(location);
+            return SendPostAsGetAsync<AcmeOrder>(location);
         }
 
         public async Task<AcmeOrder> NewOrderAsync(AcmeOrder order) {
@@ -318,6 +318,14 @@ namespace AcmeDriver {
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             var response = await _client.SendAsync(request).ConfigureAwait(false);
+            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
+        }
+
+        private async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+            var data = new byte[0];
+            var signedContent = Sign(uri, data);
+
+            var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
             return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
