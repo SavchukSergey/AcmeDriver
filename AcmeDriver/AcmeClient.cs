@@ -322,6 +322,8 @@ namespace AcmeDriver {
         }
 
         private async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+            await EnsureNonceAsync();
+
             var data = new byte[0];
             var signedContent = SignKid(uri, data);
 
