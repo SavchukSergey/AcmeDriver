@@ -116,7 +116,7 @@ namespace AcmeDriver {
         }
 
         public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
-            var data = await SendGetAsync<AcmeAuthorization>(location).ConfigureAwait(false);
+            var data = await SendPostAsGetAsync<AcmeAuthorization>(location).ConfigureAwait(false);
             data.Location = location;
             return data;
         }
