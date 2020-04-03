@@ -323,7 +323,7 @@ namespace AcmeDriver {
 
         private async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
             var data = new byte[0];
-            var signedContent = Sign(uri, data);
+            var signedContent = SignKid(uri, data);
 
             var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
             return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
