@@ -1,3 +1,5 @@
+Donations: ```bitcoin:1JBnxLMNdvLcEcSP1hrGxdfy3kf7RNnmde```
+
 # Usage
 ```c#
     using (var client = await AcmeClient.CreateAcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL)) {
