@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace AcmeDriver {
-
     public class AcmeHttp01Challenge : AcmeChallenge {
 
         public string FileName { get; set; }
