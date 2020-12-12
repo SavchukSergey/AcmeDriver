@@ -7,7 +7,7 @@ using AcmeDriver.JWK;
 using Newtonsoft.Json;
 
 namespace AcmeDriver {
-    public class Program {
+    public partial class Program {
 
         private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_PRODUCTION_URL);
 
@@ -25,12 +25,11 @@ namespace AcmeDriver {
                         await NewRegistrationAsync(options);
                         break;
                     case "dump-reg":
-                        var dumpReg = await LoadRegistrationAsync(options.AccountFile);
+                        var dumpReg = await RequireRegistrationAsync(options);
                         ShowRegistrationInfo(dumpReg);
                         break;
                     case "accept-tos":
-                        await LoadRegistrationAsync(options.AccountFile);
-                        await _client.AcceptRegistrationAgreementAsync("https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
+                        await AcceptToSAsync(options);
                         break;
                     case "new-order":
                         await NewOrderAsync(options);
@@ -41,8 +40,20 @@ namespace AcmeDriver {
                     case "complete-http-authz-files":
                         await CompleteHttpAuthzFiles(options);
                         break;
+                    case "validate-authz":
+                        await CompleteHttpAuthzFiles(options);
+                        break;
+                    case "generate-private-key":
+                        await GeneratePrivateKeyAsync(options);
+                        break;
+                    case "generate-csr":
+                        await GenerateCSRAsync(options);
+                        break;
+                    case "run":
+                        await RunAsync(options);
+                        break;
                     case "finalize-order":
-						await FinalizeOrderAsync(options);
+                        await FinalizeOrderAsync(options);
                         break;
                     case "help":
                         Console.WriteLine("help                       Show this screen");
@@ -76,14 +87,6 @@ namespace AcmeDriver {
             }
         }
 
-        private static async Task EnsureRegistrationAsync(CommandLineOptions options) {
-            try {
-                await LoadRegistrationAsync(options.AccountFile);
-            } catch {
-                await NewRegistrationAsync(options);
-            }
-        }
-
         private static async Task NewRegistrationAsync(CommandLineOptions options) {
             await _client.NewRegistrationAsync(options.Contacts.ToArray());
             ShowRegistrationInfo(_client.Registration);
@@ -94,26 +97,19 @@ namespace AcmeDriver {
             if (options.Domains.Count == 0) {
                 ShowNewOrderHelp();
             } else {
-                await LoadRegistrationAsync(options.AccountFile);
+                await RequireRegistrationAsync(options);
                 var now = DateTime.UtcNow;
                 var order = await _client.NewOrderAsync(new AcmeOrder {
                     Identifiers = options.Domains.Select(arg => new AcmeIdentifier { Type = "dns", Value = arg }).ToArray(),
                 });
-                await SaveOrderAsync(order, options.OrderFile);
+                await SaveOrderAsync(options, order);
                 await ShowOrderInfoAsync(order);
             }
         }
 
-		private static async Task FinalizeOrderAsync(CommandLineOptions options) {
-			await LoadRegistrationAsync(options.AccountFile);
-			var order = await LoadOrderAsync(options.OrderFile);
-			var csr = await GetCsrAsync(options.CsrFile);
-			await _client.FinalizeOrderAsync(order, csr);
-		}
-		
-		private static async Task CreateHttpAuthzFiles(CommandLineOptions options) {
-            await LoadRegistrationAsync(options.AccountFile);
-            var order = await LoadOrderAsync(options.OrderFile);
+        private static async Task CreateHttpAuthzFiles(CommandLineOptions options) {
+            //todo: ensure path
+            var order = await RequireOrderAsync(options);
             foreach (var authUri in order.Authorizations) {
                 var authz = await _client.GetAuthorizationAsync(new Uri(authUri));
                 var httpChallenge = authz.GetHttp01Challenge(_client.Registration);
@@ -126,8 +122,7 @@ namespace AcmeDriver {
         }
 
         private static async Task CompleteHttpAuthzFiles(CommandLineOptions options) {
-            await LoadRegistrationAsync(options.AccountFile);
-            var order = await LoadOrderAsync(options.OrderFile);
+            var order = await RequireOrderAsync(options);
 
             foreach (var authUri in order.Authorizations) {
                 var authz = await _client.GetAuthorizationAsync(new Uri(authUri));
@@ -204,71 +199,11 @@ namespace AcmeDriver {
             Console.WriteLine();
         }
 
-        private static async Task<string> GetCsrAsync(string path) {
-            try {
-                using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    using (var reader = new StreamReader(file)) {
-                        var content = await reader.ReadToEndAsync();
-                        return content;
-                    }
-                }
-            } catch {
-                return null;
-            }
-        }
-
-
         #region Load & Saving
-
-        private static async Task<AcmeClientRegistration> LoadRegistrationAsync(string filename) {
-            try {
-                using (var file = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    using (var reader = new StreamReader(file)) {
-                        var content = await reader.ReadToEndAsync();
-                        var model = Deserialize<AcmeRegistrationModel>(content);
-                        var res = Convert(model);
-                        _client.Registration = res;
-                        return res;
-                    }
-                }
-            } catch {
-                WriteErrorLine($"Unable to read account file {filename}");
-                return null;
-            }
-        }
 
         private static async Task SaveRegistrationAsync(AcmeClientRegistration reg, string filename) {
             try {
                 var model = Convert(reg);
-                var content = Serialize(model);
-                using (var file = File.Open(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)) {
-                    using (var writer = new StreamWriter(file)) {
-                        await writer.WriteAsync(content);
-                    }
-                }
-            } catch {
-            }
-        }
-
-        private static async Task<AcmeOrder> LoadOrderAsync(string filename) {
-            try {
-                using (var file = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    using (var reader = new StreamReader(file)) {
-                        var content = await reader.ReadToEndAsync();
-                        var model = Deserialize<AcmeOrderModel>(content);
-                        return await _client.GetOrderAsync(model.Location);
-                    }
-                }
-            } catch {
-                WriteErrorLine($"Unable to read order file {filename}");
-                return null;
-            }
-        }
-
-
-        private static async Task SaveOrderAsync(AcmeOrder order, string filename) {
-            try {
-                var model = Convert(order);
                 var content = Serialize(model);
                 using (var file = File.Open(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)) {
                     using (var writer = new StreamWriter(file)) {
@@ -292,17 +227,6 @@ namespace AcmeDriver {
                 Id = reg.Id,
                 Key = reg.Key,
                 Location = reg.Location
-            };
-        }
-
-        private static AcmeOrderModel Convert(AcmeOrder order) {
-            return new AcmeOrderModel {
-                Authorizations = order.Authorizations,
-                Expires = order.Expires,
-                Finalize = order.Finalize,
-                Identifiers = order.Identifiers,
-                Location = order.Location,
-                Status = order.Status,
             };
         }
 
@@ -335,6 +259,11 @@ namespace AcmeDriver {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(message);
             Console.ForegroundColor = backup;
+        }
+
+        private static void WriterException(Exception exc) {
+            Console.WriteLine(exc.Message);
+            Console.WriteLine(exc.StackTrace);
         }
     }
 }

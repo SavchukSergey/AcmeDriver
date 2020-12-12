@@ -20,7 +20,7 @@ namespace AcmeDriver {
         public string Finalize { get; set; }
 
         [JsonProperty("certificate")]
-        public string Certificate { get; set; }
+        public string? Certificate { get; set; }
 
         [JsonIgnore]
         public Uri Location { get; set; }
