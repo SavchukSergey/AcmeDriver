@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace AcmeDriver {
     public class AcmeRegistrationKey {
 
-        [JsonProperty("kty")]
+        [JsonPropertyName("kty")]
         public string Type { get; set; }
 
-        [JsonProperty("n")]
+        [JsonPropertyName("n")]
         public string Modulus { get; set; }
 
-        [JsonProperty("e")]
+        [JsonPropertyName("e")]
         public string Exponent { get; set; }
 
     }

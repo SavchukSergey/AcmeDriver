@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace AcmeDriver {
     public class AcmeDirectory {
@@ -8,32 +8,32 @@ namespace AcmeDriver {
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-04</para>
         ///</summary>
-        [JsonProperty("newNonce")]
+        [JsonPropertyName("newNonce")]
         public string NewNonceUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-05</para>
         ///</summary>
-        [JsonProperty("newAccount")]
+        [JsonPropertyName("newAccount")]
         public string NewAccountUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
         ///</summary>
-        [JsonProperty("keyChange")]
+        [JsonPropertyName("keyChange")]
         public string KeyChangeUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-05</para>
         ///</summary>
-        [JsonProperty("newOrder")]
+        [JsonPropertyName("newOrder")]
         public string NewOrderUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
         ///<para>Removed in https://tools.ietf.org/html/draft-ietf-acme-acme-05. Use <see cref="M:NewOrderUrl" /></para>
         ///</summary>
-        [JsonProperty("new-app")]
+        [JsonPropertyName("new-app")]
         public string NewAppUrl { get; set; }
 
 
@@ -41,27 +41,27 @@ namespace AcmeDriver {
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-01</para>
         ///<para>Removed in https://tools.ietf.org/html/draft-ietf-acme-acme-03. Use <see cref="M:NewAppUrl" /></para>
         ///</summary>
-        [JsonProperty("new-cert")]
+        [JsonPropertyName("new-cert")]
         public string NewCertUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-01</para>
         ///</summary>
-        [JsonProperty("revokeCert")]
+        [JsonPropertyName("revokeCert")]
         public string RevokeCertUrl { get; set; }
 
 
         ///<summary>
         ///<para>Unavailable in https://tools.ietf.org/html/draft-ietf-acme-acme-03</para>
         ///</summary>
-        [JsonProperty("newAuthz")]
+        [JsonPropertyName("newAuthz")]
         public string NewAuthzUrl { get; set; }
 
         ///<summary>
         ///<para>Introduced in https://tools.ietf.org/html/draft-ietf-acme-acme-01</para>
         ///<para>Removed in https://tools.ietf.org/html/draft-ietf-acme-acme-02</para>
         ///</summary>
-        [JsonProperty("recover-reg")]
+        [JsonPropertyName("recover-reg")]
         public string RecoverRegUrl { get; set; }
 
         public static AcmeDirectory FromBaseUrl(string baseUrl) {

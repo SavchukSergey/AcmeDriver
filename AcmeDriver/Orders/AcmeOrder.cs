@@ -1,25 +1,25 @@
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AcmeDriver {
     public class AcmeOrder {
 
-        [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public AcmeOrderStatus Status { get; set; }
 
-        [JsonProperty("expires")]
+        [JsonPropertyName("expires")]
         public DateTimeOffset Expires { get; set; }
 
-        [JsonProperty("identifiers")]
+        [JsonPropertyName("identifiers")]
         public AcmeIdentifier[] Identifiers { get; set; }
 
-        [JsonProperty("authorizations")]
+        [JsonPropertyName("authorizations")]
         public string[] Authorizations { get; set; }
 
-        [JsonProperty("finalize")]
+        [JsonPropertyName("finalize")]
         public string Finalize { get; set; }
 
-        [JsonProperty("certificate")]
+        [JsonPropertyName("certificate")]
         public string? Certificate { get; set; }
 
         [JsonIgnore]

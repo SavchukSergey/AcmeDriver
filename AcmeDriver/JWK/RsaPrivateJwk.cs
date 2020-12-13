@@ -1,31 +1,31 @@
-﻿using Newtonsoft.Json;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 
 namespace AcmeDriver.JWK {
     public class RsaPrivateJwk : PrivateJsonWebKey {
 
-        [JsonProperty("n")]
+        [JsonPropertyName("n")]
         public string Modulus { get; set; }
 
-        [JsonProperty("e")]
+        [JsonPropertyName("e")]
         public string Exponent { get; set; }
 
-        [JsonProperty("d")]
+        [JsonPropertyName("d")]
         public string D { get; set; }
 
-        [JsonProperty("p")]
+        [JsonPropertyName("p")]
         public string P { get; set; }
 
-        [JsonProperty("q")]
+        [JsonPropertyName("q")]
         public string Q { get; set; }
 
-        [JsonProperty("dp")]
+        [JsonPropertyName("dp")]
         public string DP { get; set; }
 
-        [JsonProperty("dq")]
+        [JsonPropertyName("dq")]
         public string DQ { get; set; }
 
-        [JsonProperty("qi")]
+        [JsonPropertyName("qi")]
         public string InverseQ { get; set; }
 
         public override string Kty => "RSA";

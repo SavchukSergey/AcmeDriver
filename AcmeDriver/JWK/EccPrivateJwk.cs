@@ -1,22 +1,21 @@
-﻿#if (NETCOREAPP2_0 || NETCOREAPP2_1)
-
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
+using AcmeDriver.Utils;
 
 namespace AcmeDriver.JWK {
     public class EccPrivateJwk : PrivateJsonWebKey {
 
-        [JsonProperty("crv")]
+        [JsonPropertyName("crv")]
         public string Curve { get; set; }
 
-        [JsonProperty("x")]
+        [JsonPropertyName("x")]
         public string X { get; set; }
 
-        [JsonProperty("y")]
+        [JsonPropertyName("y")]
         public string Y { get; set; }
 
-        [JsonProperty("d")]
+        [JsonPropertyName("d")]
         public string D { get; set; }
 
         public override string Kty => "EC";
@@ -104,5 +103,3 @@ namespace AcmeDriver.JWK {
         }
     }
 }
-
-#endif

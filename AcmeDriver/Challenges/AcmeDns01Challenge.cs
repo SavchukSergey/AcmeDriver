@@ -1,12 +1,11 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using AcmeDriver.Utils;
 
 namespace AcmeDriver {
-
     public class AcmeDns01Challenge : AcmeChallenge {
 
         public string DnsRecord => "_acme-challenge";
@@ -25,7 +24,7 @@ namespace AcmeDriver {
             try {
                 using (var client = new HttpClient()) {
                     var responseContent = await client.GetStringAsync(GoogleApiUrl).ConfigureAwait(false);
-                    var res = JsonConvert.DeserializeObject<GoogleDnsApiResponse>(responseContent);
+                    var res = AcmeJson.Deserialize<GoogleDnsApiResponse>(responseContent);
                     return res.Answers.Any(a => a.Type == GoogleDnsRecordType.TXT && (a.Data == DnsRecordContent || a.Data == $"\"{DnsRecordContent}\""));
                 }
             } catch {
@@ -35,20 +34,20 @@ namespace AcmeDriver {
 
         public class GoogleDnsApiResponse {
 
-            [JsonProperty("Answer")]
+            [JsonPropertyName("Answer")]
             public IList<GoogleDnsApiResponseAnswer> Answers { get; } = new List<GoogleDnsApiResponseAnswer>();
 
         }
 
         public class GoogleDnsApiResponseAnswer {
 
-            [JsonProperty("name")]
+            [JsonPropertyName("name")]
             public string Name { get; set; }
 
-            [JsonProperty("type")]
+            [JsonPropertyName("type")]
             public GoogleDnsRecordType Type { get; set; }
 
-            [JsonProperty("data")]
+            [JsonPropertyName("data")]
             public string Data { get; set; }
 
         }

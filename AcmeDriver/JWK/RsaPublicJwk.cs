@@ -1,21 +1,22 @@
-﻿using Newtonsoft.Json;
+﻿using AcmeDriver.Utils;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 
 namespace AcmeDriver.JWK {
     public class RsaPublicJwk : PublicJsonWebKey {
 
-        [JsonProperty("n")]
+        [JsonPropertyName("n")]
         public string Modulus { get; set; }
 
-        [JsonProperty("e")]
+        [JsonPropertyName("e")]
         public string Exponent { get; set; }
 
         public override string Kty => "RSA";
 
         protected override string GetJwkThumbprintJson() {
-            var n = JsonConvert.SerializeObject(Modulus);
-            var e = JsonConvert.SerializeObject(Exponent);
-            var kty = JsonConvert.SerializeObject(Kty);
+            var n = AcmeJson.Serialize(Modulus);
+            var e = AcmeJson.Serialize(Exponent);
+            var kty = AcmeJson.Serialize(Kty);
             return $"{{\"e\":{e},\"kty\":{kty},\"n\":{n}}}";
         }
 

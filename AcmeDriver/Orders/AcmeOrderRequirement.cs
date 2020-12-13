@@ -1,16 +1,15 @@
-using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AcmeDriver {
     public class AcmeOrderRequirement {
 
-        [JsonProperty("type")]
+        [JsonPropertyName("type")]
         public string Type { get; set; }
 
-        [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public AcmeOrderRequirementStatus Status { get; set; }
 
-        [JsonProperty("url")]
+        [JsonPropertyName("url")]
         public string Url { get; set; }
 
     }

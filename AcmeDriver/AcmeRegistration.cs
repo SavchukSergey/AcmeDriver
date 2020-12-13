@@ -1,25 +1,25 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AcmeDriver {
     public class AcmeRegistration : AcmeResource {
 
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public long Id { get; set; }
 
-        [JsonProperty("key")]
+        [JsonPropertyName("key")]
         public AcmeRegistrationKey Key { get; set; }
 
-        [JsonProperty("contact")]
+        [JsonPropertyName("contact")]
         public string[] Contacts { get; set; }
 
-        [JsonProperty("initialIp")]
+        [JsonPropertyName("initialIp")]
         public string InitialIp { get; set; }
 
-        [JsonProperty("createdAt")]
+        [JsonPropertyName("createdAt")]
         public DateTimeOffset CreatedAt { get; set; }
 
-        [JsonProperty("agreement")]
+        [JsonPropertyName("agreement")]
         public string Agreement { get; set; }
 
     }

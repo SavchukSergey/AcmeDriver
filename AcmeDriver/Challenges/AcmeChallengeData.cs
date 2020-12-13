@@ -1,21 +1,21 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace AcmeDriver {
     public class AcmeChallengeData {
 
-        [JsonProperty("type")]
+        [JsonPropertyName("type")]
         public string Type { get; set; }
 
-        [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public string Status { get; set; }
 
-        [JsonProperty("url")]
+        [JsonPropertyName("url")]
         public string Uri { get; set; }
 
-        [JsonProperty("token")]
+        [JsonPropertyName("token")]
         public string Token { get; set; }
 
-        [JsonProperty("error")]
+        [JsonPropertyName("error")]
         public AcmeExceptionInfo Error { get; set; }
 
         public string GetKeyAuthorization(AcmeClientRegistration reg) {

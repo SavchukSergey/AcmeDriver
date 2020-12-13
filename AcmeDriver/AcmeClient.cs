@@ -3,9 +3,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using AcmeDriver.Handlers;
 using AcmeDriver.JWK;
+using AcmeDriver.Utils;
 
 namespace AcmeDriver {
     public class AcmeClient : IDisposable {
@@ -39,7 +39,7 @@ namespace AcmeDriver {
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 var response = await client.SendAsync(request).ConfigureAwait(false);
                 var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var res = JsonConvert.DeserializeObject<AcmeDirectory>(responseContent);
+                var res = AcmeJson.Deserialize<AcmeDirectory>(responseContent);
                 var acmeClient = new AcmeClient(res);
                 return acmeClient;
             }
@@ -222,7 +222,7 @@ namespace AcmeDriver {
                 alg = GetSignatureAlg(),
                 jwk = Registration.Key.GetPublicJwk()
             };
-            var protectedHeaderJson = JsonConvert.SerializeObject(protectedHeader);
+            var protectedHeaderJson = AcmeJson.Serialize(protectedHeader);
             var protectedHeaderData = Encoding.UTF8.GetBytes(protectedHeaderJson);
             var protectedHeaderEncoded = Base64Url.Encode(protectedHeaderData);
 
@@ -235,7 +235,7 @@ namespace AcmeDriver {
                 @protected = protectedHeaderEncoded,
                 signature = ComputeSignature(Encoding.UTF8.GetBytes(tbs))
             };
-            return JsonConvert.SerializeObject(json);
+            return AcmeJson.Serialize(json);
         }
 
         private string SignKid(Uri url, byte[] payload) {
@@ -248,7 +248,7 @@ namespace AcmeDriver {
                 alg = GetSignatureAlg(),
                 kid = Registration.Location.ToString()
             };
-            var protectedHeaderJson = JsonConvert.SerializeObject(protectedHeader);
+            var protectedHeaderJson = AcmeJson.Serialize(protectedHeader);
             var protectedHeaderData = Encoding.UTF8.GetBytes(protectedHeaderJson);
             var protectedHeaderEncoded = Base64Url.Encode(protectedHeaderData);
 
@@ -261,7 +261,7 @@ namespace AcmeDriver {
                 @protected = protectedHeaderEncoded,
                 signature = ComputeSignature(Encoding.UTF8.GetBytes(tbs))
             };
-            return JsonConvert.SerializeObject(json);
+            return AcmeJson.Serialize(json);
         }
 
         private string GetSignatureAlg() {
@@ -275,7 +275,7 @@ namespace AcmeDriver {
         }
 
         private async Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler) where TResult : class {
-            var dataContent = JsonConvert.SerializeObject(model);
+            var dataContent = AcmeJson.Serialize(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
@@ -284,7 +284,7 @@ namespace AcmeDriver {
         }
 
         private async Task<string> SendPostKidAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
-            var dataContent = JsonConvert.SerializeObject(model);
+            var dataContent = AcmeJson.Serialize(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
@@ -292,8 +292,8 @@ namespace AcmeDriver {
             return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
-        private async Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
-            var dataContent = JsonConvert.SerializeObject(model);
+        private async Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
+            var dataContent = AcmeJson.Serialize(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = SignKid(uri, data);
 
@@ -301,8 +301,8 @@ namespace AcmeDriver {
             return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
-        private async Task<string> SendPostAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string> headersHandler = null) {
-            var dataContent = JsonConvert.SerializeObject(model);
+        private async Task<string> SendPostAsync<TSource>(Uri uri, TSource model, Action<HttpResponseHeaders, string>? headersHandler = null) {
+            var dataContent = AcmeJson.Serialize(model);
             var data = Encoding.UTF8.GetBytes(dataContent);
             var signedContent = Sign(uri, data);
 
@@ -310,19 +310,19 @@ namespace AcmeDriver {
             return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
-        private async Task<TResult> SendGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+        private async Task<TResult> SendGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             var response = await _client.SendAsync(request).ConfigureAwait(false);
             return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
-        private async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+        private async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
             var response = await SendPostAsGetResponseAsync(uri).ConfigureAwait(false);
             return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
         }
 
-        private async Task<string> SendPostAsGetStringAsync(Uri uri, Action<HttpResponseHeaders, string> headersHandler = null) {
+        private async Task<string> SendPostAsGetStringAsync(Uri uri, Action<HttpResponseHeaders, string>? headersHandler = null) {
             var response = await SendPostAsGetResponseAsync(uri).ConfigureAwait(false);
             return await ProcessRequestStringAsync(response, headersHandler).ConfigureAwait(false);
         }
@@ -348,26 +348,26 @@ namespace AcmeDriver {
             await ProcessRequestAsync(response).ConfigureAwait(false);
         }
 
-        private async Task<TResult> ProcessRequestAsync<TResult>(HttpResponseMessage response, Action<HttpResponseHeaders, TResult> headersHandler = null) where TResult : class {
+        private async Task<TResult> ProcessRequestAsync<TResult>(HttpResponseMessage response, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
             var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var res = JsonConvert.DeserializeObject<TResult>(responseContent);
+            var res = AcmeJson.Deserialize<TResult>(responseContent);
             headersHandler?.Invoke(response.Headers, res);
             return res;
         }
 
-        private async Task<string> ProcessRequestStringAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
+        private async Task<string> ProcessRequestStringAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string>? headersHandler = null) {
             var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             headersHandler?.Invoke(response.Headers, responseContent);
             return responseContent;
         }
 
-        private async Task<byte[]> ProcessRequestBytesAsync(HttpResponseMessage response, Action<HttpResponseHeaders, byte[]> headersHandler = null) {
+        private async Task<byte[]> ProcessRequestBytesAsync(HttpResponseMessage response, Action<HttpResponseHeaders, byte[]>? headersHandler = null) {
             var responseContent = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
             headersHandler?.Invoke(response.Headers, responseContent);
             return responseContent;
         }
 
-        private async Task<string> ProcessRequestAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string> headersHandler = null) {
+        private async Task<string> ProcessRequestAsync(HttpResponseMessage response, Action<HttpResponseHeaders, string>? headersHandler = null) {
             var res = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             headersHandler?.Invoke(response.Headers, res);
             return res;
@@ -385,7 +385,7 @@ namespace AcmeDriver {
             return new StringContent(val, null, "application/jose+json") {
                 Headers = {
                     ContentType = {
-                        CharSet= string.Empty //letsencrypt fails if charset is specified
+                        CharSet = string.Empty //letsencrypt fails if charset is specified
                     }
                 }
             };

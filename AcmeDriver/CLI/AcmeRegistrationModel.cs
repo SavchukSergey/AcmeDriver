@@ -1,21 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using AcmeDriver.JWK;
-using Newtonsoft.Json;
 
 namespace AcmeDriver.CLI {
     public class AcmeRegistrationModel {
 
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public long Id { get; set; }
 
-        [JsonProperty("key")]
+        [JsonPropertyName("key")]
         public PrivateJsonWebKey Key { get; set; }
 
-        [JsonProperty("contacts")]
+        [JsonPropertyName("contacts")]
         public IList<string> Contacts { get; set; }
 
-        [JsonProperty("location")]
+        [JsonPropertyName("location")]
         public Uri Location { get; set; }
 
     }

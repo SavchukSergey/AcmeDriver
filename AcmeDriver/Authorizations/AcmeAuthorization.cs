@@ -1,22 +1,22 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AcmeDriver {
     public class AcmeAuthorization : AcmeResource {
 
-        [JsonProperty("identifier")]
+        [JsonPropertyName("identifier")]
         public AcmeIdentifier Identifier { get; set; }
 
-        [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public AcmeAuthorizationStatus Status { get; set; }
 
-        [JsonProperty("expires")]
+        [JsonPropertyName("expires")]
         public DateTimeOffset Expires { get; set; }
 
-        [JsonProperty("challenges")]
+        [JsonPropertyName("challenges")]
         public AcmeChallengeData[] Challenges { get; set; }
 
-        [JsonProperty("wildcard")]
+        [JsonPropertyName("wildcard")]
         public bool Wildcard { get; set; }
 
     }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AcmeDriver.CLI;
 using AcmeDriver.JWK;
-using Newtonsoft.Json;
+using AcmeDriver.Utils;
 
 namespace AcmeDriver {
     public partial class Program {
@@ -231,15 +231,15 @@ namespace AcmeDriver {
         }
 
         private static T Deserialize<T>(string content) {
-            return JsonConvert.DeserializeObject<T>(content, new PrivateJwkConverter());
+            return AcmeJson.Deserialize<T>(content);
         }
 
         private static string Serialize(AcmeRegistrationModel reg) {
-            return JsonConvert.SerializeObject(reg, Formatting.Indented);
+            return AcmeJson.Serialize(reg);
         }
 
         private static string Serialize(AcmeOrderModel order) {
-            return JsonConvert.SerializeObject(order, Formatting.Indented);
+            return AcmeJson.Serialize(order);
         }
 
 
