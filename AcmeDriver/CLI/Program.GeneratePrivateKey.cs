@@ -2,6 +2,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using AcmeDriver.CLI;
+using AcmeDriver.Utils;
 
 namespace AcmeDriver {
     public partial class Program {

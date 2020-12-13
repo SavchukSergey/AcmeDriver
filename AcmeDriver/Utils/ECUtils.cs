@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using System.Security.Cryptography;
 
-namespace AcmeDriver {
+namespace AcmeDriver.Utils {
     public static class ECUtils {
 
         public static ECCurve GetCurve(string curveName) {
@@ -35,22 +35,22 @@ namespace AcmeDriver {
                 if (a.Oid.Value == b.Oid.Value) return true;
             }
             if (HasExplicitData(a) && HasExplicitData(b)) {
-                if (new BigInteger(a.A) != new BigInteger(b.A)) {
+                if (!SameBigInteger(a.A, b.A)) {
                     return false;
                 }
-                if (new BigInteger(a.B) != new BigInteger(b.B)) {
+                if (!SameBigInteger(a.B, b.B)) {
                     return false;
                 }
-                if (new BigInteger(a.Cofactor) != new BigInteger(b.Cofactor)) {
+                if (!SameBigInteger(a.Cofactor, b.Cofactor)) {
                     return false;
                 }
-                if (new BigInteger(a.Order) != new BigInteger(b.Order)) {
+                if (!SameBigInteger(a.Order, b.Order)) {
                     return false;
                 }
-                if (new BigInteger(a.G.X) != new BigInteger(b.G.X)) {
+                if (!SameBigInteger(a.G.X, b.G.X)) {
                     return false;
                 }
-                if (new BigInteger(a.G.Y) != new BigInteger(b.G.Y)) {
+                if (!SameBigInteger(a.G.Y, b.G.Y)) {
                     return false;
                 }
                 return true;
@@ -66,6 +66,13 @@ namespace AcmeDriver {
             if (curve.G.X == null || curve.G.X.Length == 0) return false;
             if (curve.G.Y == null || curve.G.Y.Length == 0) return false;
             return true;
+        }
+
+        private static bool SameBigInteger(byte[]? left, byte[]? right) {
+            if (left != null && right != null) {
+                return new BigInteger(left) == new BigInteger(right);
+            }
+            return (left == null) == (right == null);
         }
 
     }

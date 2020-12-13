@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using AcmeDriver.CLI;
+using AcmeDriver.Utils;
 
 namespace AcmeDriver {
     public partial class Program {
@@ -78,17 +79,7 @@ namespace AcmeDriver {
                 using var file = File.Open(options.PrivateKeyFile, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var reader = new StreamReader(file);
                 var keyPEM = await reader.ReadToEndAsync();
-                if (keyPEM.Contains("RSA PRIVATE KEY")) {
-                    var cryptoServiceProvider = new RSACryptoServiceProvider();
-                    cryptoServiceProvider.ImportFromPem(keyPEM);
-                    return cryptoServiceProvider;
-                }
-                if (keyPEM.Contains("EC PRIVATE KEY")) {
-                    var ecdsa = ECDsa.Create();
-                    ecdsa.ImportFromPem(keyPEM);
-                    return ecdsa;
-                }
-                throw new CLIException("This kind of private key is not supported");
+                return PrivateKeyUtils.ReadPrivateKey(keyPEM);
             } catch (Exception exc) {
                 throw new CLIException("Unable to read Private Key file", exc);
             }
