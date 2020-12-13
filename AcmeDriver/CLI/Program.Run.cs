@@ -19,6 +19,9 @@ namespace AcmeDriver {
             if (string.IsNullOrWhiteSpace(options.PrivateKeyFile)) {
                 options.PrivateKeyFile = $"{domainsLabel}.key";
             }
+            if (string.IsNullOrWhiteSpace(options.KeyAlgorithm)) {
+                options.KeyAlgorithm = "ec:P-384";
+            }
             if (string.IsNullOrWhiteSpace(options.CsrFile)) {
                 options.CsrFile = $"{domainsLabel}.csr";
             }

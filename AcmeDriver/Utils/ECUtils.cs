@@ -1,11 +1,18 @@
-#if (NETCOREAPP2_0 || NETCOREAPP2_1)
-
 using System;
 using System.Numerics;
 using System.Security.Cryptography;
 
 namespace AcmeDriver {
     public static class ECUtils {
+
+        public static ECCurve GetCurve(string curveName) {
+            return curveName switch {
+                "P-256" => ECCurve.NamedCurves.nistP256,
+                "P-384" => ECCurve.NamedCurves.nistP384,
+                "P-521" => ECCurve.NamedCurves.nistP521,
+                _ => throw new NotSupportedException($"Unknown curve {curveName}")
+            };
+        }
 
         public static string GetFipsCurveName(ECCurve curve) {
             if (AreCurvesEqual(curve, ECCurve.NamedCurves.nistP256)) {
@@ -63,5 +70,3 @@ namespace AcmeDriver {
 
     }
 }
-
-#endif

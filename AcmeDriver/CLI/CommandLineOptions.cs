@@ -13,6 +13,8 @@ namespace AcmeDriver.CLI {
         public string? AccountFile { get; set; }
 
         public string? PrivateKeyFile { get; set; }
+
+        public string? KeyAlgorithm { get; set; }
         
         public string? Subject { get; set; }
         
@@ -54,6 +56,10 @@ namespace AcmeDriver.CLI {
                         case "--domain":
                             enumerator.MoveNext();
                             res.Domains.Add(enumerator.Current);
+                            break;
+                        case "--key-algorithm":
+                            enumerator.MoveNext();
+                            res.KeyAlgorithm = enumerator.Current;
                             break;
                         case "--order":
                             enumerator.MoveNext();

@@ -10,6 +10,8 @@ namespace AcmeDriver {
                 .Replace("-----END NEW CERTIFICATE REQUEST-----", "")
                 .Replace("-----BEGIN PRIVATE KEY-----", "")
                 .Replace("-----END PRIVATE KEY-----", "")
+                .Replace("-----BEGIN RSA PRIVATE KEY-----", "")
+                .Replace("-----END RSA PRIVATE KEY-----", "")
                 .Replace("-----BEGIN CERTIFICATE REQUEST-----", "")
                 .Replace("-----END CERTIFICATE REQUEST-----", "")
                 .Trim();
