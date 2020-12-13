@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using AcmeDriver.CLI;
 
@@ -66,6 +67,30 @@ namespace AcmeDriver {
                 return content;
             } catch (Exception exc) {
                 throw new CLIException("Unable to read CSR file", exc);
+            }
+        }
+
+        private static async Task<AsymmetricAlgorithm> LoadPrivateKeyAsync(CommandLineOptions options) {
+            if (string.IsNullOrWhiteSpace(options.PrivateKeyFile)) {
+                throw new CLIException("--private-key is required");
+            }
+            try {
+                using var file = File.Open(options.PrivateKeyFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var reader = new StreamReader(file);
+                var keyPEM = await reader.ReadToEndAsync();
+                if (keyPEM.Contains("RSA PRIVATE KEY")) {
+                    var cryptoServiceProvider = new RSACryptoServiceProvider();
+                    cryptoServiceProvider.ImportFromPem(keyPEM);
+                    return cryptoServiceProvider;
+                }
+                if (keyPEM.Contains("EC PRIVATE KEY")) {
+                    var ecdsa = ECDsa.Create();
+                    ecdsa.ImportFromPem(keyPEM);
+                    return ecdsa;
+                }
+                throw new CLIException("This kind of private key is not supported");
+            } catch (Exception exc) {
+                throw new CLIException("Unable to read Private Key file", exc);
             }
         }
 

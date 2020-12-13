@@ -12,32 +12,31 @@ namespace AcmeDriver {
             if (string.IsNullOrWhiteSpace(options.CsrFile)) {
                 throw new CLIException("--csr is required");
             }
-            if (string.IsNullOrWhiteSpace(options.PrivateKeyFile)) {
-                throw new CLIException("--private-key is required");
-            }
             if (string.IsNullOrWhiteSpace(options.Subject)) {
                 throw new CLIException("--subject is required");
             }
 
             var subjectName = options.Subject;
 
-            var keyReader = new StreamReader(options.PrivateKeyFile);
-            var keyPEM = await keyReader.ReadToEndAsync();
-            var keyContent = PemUtils.StripPemCsrHeader(keyPEM);
-            var key = System.Convert.FromBase64String(keyContent);
+            var privateKey = await LoadPrivateKeyAsync(options);
+            var certificateRequest = privateKey switch {
+                RSACryptoServiceProvider rsa => new CertificateRequest(subjectName,
+                  rsa, HashAlgorithmName.SHA256,
+                  RSASignaturePadding.Pkcs1),
+                ECDsa ecdsa => new CertificateRequest(subjectName, ecdsa, HashAlgorithmName.SHA256),
+                _ => throw new NotSupportedException("Private key is not supported")
+            };
 
-            var cryptoServiceProvider = new RSACryptoServiceProvider();
-            cryptoServiceProvider.ImportRSAPrivateKey(key, out var _);
-
-            var certificateRequest = new CertificateRequest(subjectName,
-                  cryptoServiceProvider, HashAlgorithmName.SHA256,
-                  RSASignaturePadding.Pkcs1);
+            var signatureGenerator = privateKey switch {
+                RSACryptoServiceProvider rsa => X509SignatureGenerator.CreateForRSA(
+                        rsa,
+                        RSASignaturePadding.Pkcs1),
+                ECDsa ecdsa => X509SignatureGenerator.CreateForECDsa(ecdsa),
+                _ => throw new NotSupportedException("Private key is not supported")
+            };
 
             var csr = PemUtils.DERtoPEM(
-                  certificateRequest.CreateSigningRequest(
-                     X509SignatureGenerator.CreateForRSA(
-                        cryptoServiceProvider,
-                        RSASignaturePadding.Pkcs1)), "CERTIFICATE REQUEST");
+                  certificateRequest.CreateSigningRequest(signatureGenerator), "CERTIFICATE REQUEST");
 
             using var writer = new StreamWriter(options.CsrFile);
             await writer.WriteAsync(csr);
