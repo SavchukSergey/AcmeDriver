@@ -73,6 +73,15 @@ namespace AcmeDriver.JWK {
         }
 
         public override byte[] SignData(byte[] data) {
+            var rsa = CreateRSA();
+            return rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        }
+
+        public override AsymmetricAlgorithm CreateAsymmetricAlgorithm() {
+            return CreateRSA();
+        }
+
+        protected RSA CreateRSA() {
             var args = new RSAParameters {
                 Modulus = Base64Url.Decode(Modulus),
                 Exponent = Base64Url.Decode(Exponent),
@@ -85,7 +94,7 @@ namespace AcmeDriver.JWK {
             };
             var rsa = RSA.Create();
             rsa.ImportParameters(args);
-            return rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            return rsa;
         }
 
     }

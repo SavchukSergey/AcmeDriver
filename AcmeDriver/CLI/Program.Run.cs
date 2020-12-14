@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
-using AcmeDriver.CLI;
 
-namespace AcmeDriver {
+namespace AcmeDriver.CLI {
     public partial class Program {
 
         private static async Task RunAsync(CommandLineOptions options) {
@@ -11,7 +10,7 @@ namespace AcmeDriver {
             var primaryDomain = options.Domains[0];
             var domainsLabel = string.Join("_", options.Domains);
             if (string.IsNullOrWhiteSpace(options.AccountFile)) {
-                options.AccountFile = "lets_encrypt_account.json";
+                options.AccountFile = "lets_encrypt_account.key";
             }
             if (string.IsNullOrWhiteSpace(options.OrderFile)) {
                 options.OrderFile = $"{domainsLabel}.order.json";

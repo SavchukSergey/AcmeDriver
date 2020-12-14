@@ -4,9 +4,6 @@ using System.Text.Json.Serialization;
 namespace AcmeDriver {
     public class AcmeRegistration : AcmeResource {
 
-        [JsonPropertyName("id")]
-        public long Id { get; set; }
-
         [JsonPropertyName("key")]
         public AcmeRegistrationKey Key { get; set; }
 

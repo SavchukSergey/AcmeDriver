@@ -14,6 +14,7 @@ namespace AcmeDriver.JWK {
         [JsonPropertyName("y")]
         public string Y { get; set; }
 
+        [JsonPropertyName("kty")]
         public override string Kty => "EC";
 
         protected override string GetJwkThumbprintJson() {

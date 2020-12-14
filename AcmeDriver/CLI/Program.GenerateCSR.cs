@@ -3,9 +3,8 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using AcmeDriver.CLI;
 
-namespace AcmeDriver {
+namespace AcmeDriver.CLI {
     public partial class Program {
 
         private static async Task<string> GenerateCSRAsync(CommandLineOptions options) {

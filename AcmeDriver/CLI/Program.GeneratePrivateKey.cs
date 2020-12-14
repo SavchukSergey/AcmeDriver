@@ -1,10 +1,9 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using AcmeDriver.CLI;
 using AcmeDriver.Utils;
 
-namespace AcmeDriver {
+namespace AcmeDriver.CLI {
     public partial class Program {
 
         private static async Task GeneratePrivateKeyAsync(CommandLineOptions options) {
@@ -33,8 +32,7 @@ namespace AcmeDriver {
                 throw new CLIException("Expected format rsa:xxxx");
             }
             var cryptoServiceProvider = new RSACryptoServiceProvider(length);
-            var data = cryptoServiceProvider.ExportRSAPrivateKey();
-            return Task.FromResult(PemUtils.DERtoPEM(data, "RSA PRIVATE KEY"));
+            return Task.FromResult(PrivateKeyUtils.ToPem(cryptoServiceProvider));
         }
 
         private static Task<string> GenerateECPrivateKey(CommandLineOptions options, string[] args) {
@@ -43,8 +41,7 @@ namespace AcmeDriver {
             }
             var curve = ECUtils.GetCurve(args[1]);
             var ecdsa = ECDsa.Create(curve);
-            var data = ecdsa.ExportECPrivateKey();
-            return Task.FromResult(PemUtils.DERtoPEM(data, "EC PRIVATE KEY"));
+            return Task.FromResult(PrivateKeyUtils.ToPem(ecdsa));
         }
 
     }

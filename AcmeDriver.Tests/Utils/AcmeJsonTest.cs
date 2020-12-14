@@ -1,3 +1,4 @@
+using AcmeDriver.JWK;
 using AcmeDriver.Utils;
 using NUnit.Framework;
 
@@ -38,6 +39,20 @@ namespace AcmeDriver.Tests {
             Assert.AreEqual("1", data.Type);
             Assert.AreEqual(512, data.Status);
             Assert.AreEqual("http://google.com", data.Detail);
+        }
+
+        [Test]
+        public void ReadWriteEccPublicJwkTest() {
+            var ecc = new EccPublicJwk {
+                Curve = "test",
+                X = "---x---",
+                Y = "---y---"
+            };
+            var json = AcmeJson.Serialize((PublicJsonWebKey)ecc);
+            var result = AcmeJson.Deserialize<EccPublicJwk>(json);
+            Assert.AreEqual(ecc.Curve, result.Curve);
+            Assert.AreEqual(ecc.X, result.X, "X");
+            Assert.AreEqual(ecc.Y, result.Y, "Y");
         }
 
     }

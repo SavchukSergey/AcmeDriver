@@ -7,7 +7,7 @@ namespace AcmeDriver.Tests {
     public class PrivateKeyUtilsTest {
 
         [Test]
-        public void ReadRSAPrivateKeyTest() {
+        public void ToAsymmetricAlgorithmRSATest() {
             var pem = @"
 -----BEGIN RSA PRIVATE KEY-----
 MIICXwIBAAKBgQC9uL5prEwR0P/aw51c7qh/pX2OIImCtj4MH3dLyVO7UGUa1aWF
@@ -25,14 +25,14 @@ RjFwudZejABICC/TPDJSTQJBAJjiunuhNmb6H2mDw5fZ7vVM1Tz9yyhU0qLerIpI
 2snUPAxmOh07FZghRzc5SYR3FLRx2fJ5pazzV/G1vWkQul0=
 -----END RSA PRIVATE KEY-----
 ";
-            var key = PrivateKeyUtils.ReadPrivateKey(pem);
+            var key = PrivateKeyUtils.ToAsymmetricAlgorithm(pem);
             Assert.IsInstanceOf<RSACryptoServiceProvider>(key);
             var rsa = (RSACryptoServiceProvider)key;
             Assert.AreEqual(1024, rsa.KeySize);
         }
 
         [Test]
-        public void ReadECPrivateKeyTest() {
+        public void ToAsymmetricAlgorithmECDsaTest() {
             var pem = @"
 -----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIHYl4h5mITzWZWVy2vhN8ZZafrGStvrv7cJ+mcPr9KjvoAoGCCqGSM49
@@ -40,7 +40,7 @@ AwEHoUQDQgAEpf95SPWY5MFGrfB5F3600BjPrJWdatLCGaiHktoP/46a2shiqKk0
 SxqwKTdk1O1p7ErfwS8aj2dV29ou8kw2dg==
 -----END EC PRIVATE KEY-----
 ";
-            var key = PrivateKeyUtils.ReadPrivateKey(pem);
+            var key = PrivateKeyUtils.ToAsymmetricAlgorithm(pem);
             Assert.IsInstanceOf<ECDsa>(key);
             var ecdsa = (ECDsa)key;
             Assert.AreEqual(ecdsa.KeySize, 256);

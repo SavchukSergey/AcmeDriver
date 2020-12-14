@@ -2,24 +2,21 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using AcmeDriver.CLI;
 using AcmeDriver.Utils;
 
-namespace AcmeDriver {
+namespace AcmeDriver.CLI {
     public partial class Program {
 
         private static async Task<AcmeClientRegistration> RequireRegistrationAsync(CommandLineOptions options) {
-            if (string.IsNullOrWhiteSpace(options.AccountFile)) {
-                throw new CLIException("--account is required");
-            }
             try {
-                using var file = File.Open(options.AccountFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var reader = new StreamReader(file);
-                var content = await reader.ReadToEndAsync();
-                var model = Deserialize<AcmeRegistrationModel>(content);
-                var res = Convert(model);
-                _client.Registration = res;
-                return res;
+                var key = await LoadAccountPrivateKeyAsync(options);
+                var jwk = PrivateKeyUtils.ToPrivateJsonWebKey(key);
+                var full = await _client.GetRegistrationAsync(jwk);
+                _client.Registration =  new AcmeClientRegistration {
+                    Key = jwk,
+                    Location = full.Location
+                };
+                return _client.Registration;
             } catch (Exception exc) {
                 throw new CLIException("Unable to read ACCOUNT file", exc);
             }
@@ -71,15 +68,26 @@ namespace AcmeDriver {
             }
         }
 
-        private static async Task<AsymmetricAlgorithm> LoadPrivateKeyAsync(CommandLineOptions options) {
+        private static Task<AsymmetricAlgorithm> LoadPrivateKeyAsync(CommandLineOptions options) {
             if (string.IsNullOrWhiteSpace(options.PrivateKeyFile)) {
                 throw new CLIException("--private-key is required");
             }
+            return LoadPrivateKeyAsync(options.PrivateKeyFile);
+        }
+
+        private static Task<AsymmetricAlgorithm> LoadAccountPrivateKeyAsync(CommandLineOptions options) {
+            if (string.IsNullOrWhiteSpace(options.AccountFile)) {
+                throw new CLIException("--account is required");
+            }
+            return LoadPrivateKeyAsync(options.AccountFile);
+        }
+
+        private static async Task<AsymmetricAlgorithm> LoadPrivateKeyAsync(string filePath) {
             try {
-                using var file = File.Open(options.PrivateKeyFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var file = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var reader = new StreamReader(file);
                 var keyPEM = await reader.ReadToEndAsync();
-                return PrivateKeyUtils.ReadPrivateKey(keyPEM);
+                return PrivateKeyUtils.ToAsymmetricAlgorithm(keyPEM);
             } catch (Exception exc) {
                 throw new CLIException("Unable to read Private Key file", exc);
             }

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using AcmeDriver.JWK;
 using NUnit.Framework;
 
 namespace AcmeDriver.Tests {
@@ -12,9 +13,28 @@ namespace AcmeDriver.Tests {
             Assert.IsNotNull(directory.NewNonceUrl);
             Assert.IsNotNull(directory.NewAccountUrl);
             Assert.IsNotNull(directory.NewOrderUrl);
-            Assert.IsNotNull(directory.NewAuthzUrl);
             Assert.IsNotNull(directory.RevokeCertUrl);
             Assert.IsNotNull(directory.KeyChangeUrl);
         }
+
+        [Test]
+        public async Task NewRegistrationAsyncTest() {
+            using var client = new AcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL);
+            var key = EccPrivateJwk.Create();
+            var registration = await client.NewRegistrationAsync(new[] { "mailto:noreply@test.com" }, key);
+            Assert.IsNotNull(registration);
+        }
+
+        [Test]
+        public async Task GetRegistrationAsyncTest() {
+            using var client = new AcmeClient(AcmeClient.LETS_ENCRYPT_STAGING_URL);
+            var key = EccPrivateJwk.Create();
+            var registration1 = await client.NewRegistrationAsync(new[] { "mailto:noreply@test.com" }, key);
+            Assert.IsNotNull(registration1);
+
+            var registration2 = await client.GetRegistrationAsync(key);
+            Assert.AreEqual(registration1.Contacts, registration2.Contacts);
+        }
+
     }
 }

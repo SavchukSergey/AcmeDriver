@@ -1,8 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using AcmeDriver.CLI;
 
-namespace AcmeDriver {
+namespace AcmeDriver.CLI {
     public partial class Program {
 
         public static async Task AcceptToSAsync(CommandLineOptions options) {

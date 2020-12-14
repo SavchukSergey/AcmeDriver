@@ -45,17 +45,7 @@ namespace AcmeDriver.JWK {
         }
 
         public override byte[] SignData(byte[] data) {
-            var curve = GetCurve();
-            var args = new ECParameters {
-                Curve = curve,
-                D = Base64Url.Decode(D),
-                Q = new ECPoint {
-                    X = Base64Url.Decode(X),
-                    Y = Base64Url.Decode(Y)
-                }
-            };
-
-            var ecdsa = ECDsa.Create(args);
+            var ecdsa = CreateEcdsa();
             return ecdsa.SignData(data, HashAlgorithmName);
         }
 
@@ -70,6 +60,10 @@ namespace AcmeDriver.JWK {
                 default:
                     return ECCurve.CreateFromFriendlyName(Curve);
             }
+        }
+
+        public override AsymmetricAlgorithm CreateAsymmetricAlgorithm() {
+            return CreateEcdsa();
         }
 
         public override string SignatureAlgorithmName {
@@ -100,6 +94,20 @@ namespace AcmeDriver.JWK {
                         throw new NotSupportedException($"Hash {SignatureAlgorithmName} is not supported");
                 }
             }
+        }
+
+        private ECDsa CreateEcdsa() {
+            var curve = GetCurve();
+            var args = new ECParameters {
+                Curve = curve,
+                D = Base64Url.Decode(D),
+                Q = new ECPoint {
+                    X = Base64Url.Decode(X),
+                    Y = Base64Url.Decode(Y)
+                }
+            };
+
+            return ECDsa.Create(args);
         }
     }
 }

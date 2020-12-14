@@ -11,6 +11,7 @@ namespace AcmeDriver.JWK {
         [JsonPropertyName("e")]
         public string Exponent { get; set; }
 
+        [JsonPropertyName("kty")]
         public override string Kty => "RSA";
 
         protected override string GetJwkThumbprintJson() {

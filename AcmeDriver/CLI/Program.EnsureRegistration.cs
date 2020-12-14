@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
-using AcmeDriver.CLI;
 
-namespace AcmeDriver {
+namespace AcmeDriver.CLI {
     public partial class Program {
 
         private static async Task EnsureRegistrationAsync(CommandLineOptions options) {
