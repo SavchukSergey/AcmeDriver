@@ -9,9 +9,9 @@ namespace AcmeDriver.CLI {
 
         public AcmeIdentifier[] Identifiers { get; set; }
 
-        public string[] Authorizations { get; set; }
+        public Uri[] Authorizations { get; set; }
 
-        public string Finalize { get; set; }
+        public Uri Finalize { get; set; }
 
         public Uri Location { get; init; }
 

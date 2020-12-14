@@ -14,13 +14,13 @@ namespace AcmeDriver {
         public AcmeIdentifier[] Identifiers { get; set; }
 
         [JsonPropertyName("authorizations")]
-        public string[] Authorizations { get; set; }
+        public Uri[] Authorizations { get; set; }
 
         [JsonPropertyName("finalize")]
-        public string Finalize { get; set; }
+        public Uri Finalize { get; set; }
 
         [JsonPropertyName("certificate")]
-        public string? Certificate { get; set; }
+        public Uri? Certificate { get; set; }
 
         [JsonIgnore]
         public Uri Location { get; set; }

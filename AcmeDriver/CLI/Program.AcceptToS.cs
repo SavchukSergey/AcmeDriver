@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using AcmeDriver.CLI;
 
@@ -6,7 +7,13 @@ namespace AcmeDriver {
 
         public static async Task AcceptToSAsync(CommandLineOptions options) {
             await RequireRegistrationAsync(options);
-            await _client.AcceptRegistrationAgreementAsync("https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf");
+            var directory = await _client.GetDirectoryAsync();
+            var termsOfUse = directory?.Meta?.TermsOfService;
+            if (termsOfUse != null) {
+                Console.WriteLine("Accepting terms of use");
+                Console.WriteLine(termsOfUse);
+                await _client.AcceptRegistrationAgreementAsync(termsOfUse);
+            }
         }
     }
 }

@@ -10,7 +10,7 @@ namespace AcmeDriver {
             for (var i = 0; i < 10; i++) {
                 bool good = true;
                 foreach (var authUri in order.Authorizations) {
-                    var authz = await _client.GetAuthorizationAsync(new Uri(authUri));
+                    var authz = await _client.GetAuthorizationAsync(authUri);
                     if (authz.Status != AcmeAuthorizationStatus.Valid) {
                         good = false;
                         break;
@@ -23,7 +23,7 @@ namespace AcmeDriver {
                 }
             }
             foreach (var authUri in order.Authorizations) {
-                var authz = await _client.GetAuthorizationAsync(new Uri(authUri));
+                var authz = await _client.GetAuthorizationAsync(authUri);
                 if (authz.Status != AcmeAuthorizationStatus.Valid) {
                     throw new CLIException($"Authorization for domain {authz.Identifier} has {authz.Status} status but {AcmeAuthorizationStatus.Valid} is required");
                 }
