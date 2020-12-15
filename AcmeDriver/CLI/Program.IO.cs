@@ -68,7 +68,7 @@ namespace AcmeDriver.CLI {
             }
         }
 
-        private static Task<AsymmetricAlgorithm> LoadPrivateKeyAsync(CommandLineOptions options) {
+        private static Task<AsymmetricAlgorithm> RequirePrivateKeyAsync(CommandLineOptions options) {
             if (string.IsNullOrWhiteSpace(options.PrivateKeyFile)) {
                 throw new CLIException("--private-key is required");
             }

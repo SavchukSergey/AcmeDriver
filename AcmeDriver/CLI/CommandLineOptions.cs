@@ -2,9 +2,21 @@ using System;
 using System.Collections.Generic;
 
 namespace AcmeDriver.CLI {
-    public class CommandLineOptions {
+    public record CommandLineOptions {
 
         public string Action { get; set; }
+
+        public string Api { get; set; }
+
+        public Uri ApiUrl {
+            get {
+                return Api switch {
+                    "lets-encrypt" => AcmeClient.LETS_ENCRYPT_PRODUCTION_URL,
+                    "lets-encrypt:staging" => AcmeClient.LETS_ENCRYPT_STAGING_URL,
+                    _ => new Uri(Api)
+                };
+            }
+        }
 
         public IList<string> Contacts { get; } = new List<string>();
 
@@ -36,6 +48,10 @@ namespace AcmeDriver.CLI {
                         case "--account":
                             enumerator.MoveNext();
                             res.AccountFile = enumerator.Current;
+                            break;
+                        case "--api":
+                            enumerator.MoveNext();
+                            res.Api = enumerator.Current;
                             break;
                         case "--challenge":
                             enumerator.MoveNext();

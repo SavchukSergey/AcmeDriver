@@ -33,16 +33,19 @@ namespace AcmeDriver.CLI {
                         await NewOrderAsync(options);
                         break;
                     case "create-http-authz-files":
-                        await CreateHttpAuthzFiles(options);
+                        await CreateHttpAuthzFilesAsunc(options);
                         break;
                     case "complete-http-authz-files":
-                        await CompleteHttpAuthzFiles(options);
+                        await CompleteHttpAuthzFilesAsync(options);
                         break;
-                    case "validate-authz":
-                        await CompleteHttpAuthzFiles(options);
+                    case "validate-authz-status":
+                        await ValidateAuthzStatusAsync(options);
                         break;
                     case "generate-private-key":
                         await GeneratePrivateKeyAsync(options);
+                        break;
+                    case "ensure-private-key":
+                        await EnsurePrivateKeyAsync(options);
                         break;
                     case "generate-csr":
                         await GenerateCSRAsync(options);
@@ -95,37 +98,6 @@ namespace AcmeDriver.CLI {
                 });
                 await SaveOrderAsync(options, order);
                 await ShowOrderInfoAsync(order);
-            }
-        }
-
-        private static async Task CreateHttpAuthzFiles(CommandLineOptions options) {
-            //todo: ensure path
-            var order = await RequireOrderAsync(options);
-            foreach (var authUri in order.Authorizations) {
-                var authz = await _client.GetAuthorizationAsync(authUri);
-                var httpChallenge = authz.GetHttp01Challenge(_client.Registration);
-                if (httpChallenge != null) {
-                    var path = Path.Combine(options.ChallengePath, httpChallenge.FileName);
-                    using var writer = new StreamWriter(path);
-                    await writer.WriteAsync(httpChallenge.FileContent);
-                    await writer.FlushAsync();
-                }
-            }
-        }
-
-        private static async Task CompleteHttpAuthzFiles(CommandLineOptions options) {
-            var order = await RequireOrderAsync(options);
-
-            foreach (var authUri in order.Authorizations) {
-                var authz = await _client.GetAuthorizationAsync(authUri);
-                if (authz.Status == AcmeAuthorizationStatus.Pending) {
-                    var httpChallenge = authz.GetHttp01Challenge(_client.Registration);
-                    if (httpChallenge != null) {
-                        if (await httpChallenge.PrevalidateAsync()) {
-                            await _client.CompleteChallengeAsync(httpChallenge);
-                        }
-                    }
-                }
             }
         }
 

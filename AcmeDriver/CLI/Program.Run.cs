@@ -36,11 +36,16 @@ namespace AcmeDriver.CLI {
             if (options.Contacts.Count == 0) {
                 options.Contacts.Add($"mailto:noreply@{primaryDomain}");
             }
+
+            await EnsurePrivateKeyAsync(options with {
+                PrivateKeyFile = options.AccountFile
+            });
+
             await EnsureRegistrationAsync(options);
             await AcceptToSAsync(options);
             await NewOrderAsync(options);
-            await CreateHttpAuthzFiles(options);
-            await CompleteHttpAuthzFiles(options);
+            await CreateHttpAuthzFilesAsunc(options);
+            await CompleteHttpAuthzFilesAsync(options);
             await ValidateAuthzStatusAsync(options);
             await GeneratePrivateKeyAsync(options);
             await GenerateCSRAsync(options);

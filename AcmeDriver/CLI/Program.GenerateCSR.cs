@@ -17,7 +17,7 @@ namespace AcmeDriver.CLI {
 
             var subjectName = options.Subject;
 
-            var privateKey = await LoadPrivateKeyAsync(options);
+            var privateKey = await RequirePrivateKeyAsync(options);
             var certificateRequest = privateKey switch {
                 RSACryptoServiceProvider rsa => new CertificateRequest(subjectName,
                   rsa, HashAlgorithmName.SHA256,
