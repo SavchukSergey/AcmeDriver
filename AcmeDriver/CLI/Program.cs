@@ -97,7 +97,7 @@ namespace AcmeDriver.CLI {
                     Identifiers = options.Domains.Select(arg => new AcmeIdentifier { Type = "dns", Value = arg }).ToArray(),
                 });
                 await SaveOrderAsync(options, order);
-                await ShowOrderInfoAsync(order);
+                // await ShowOrderInfoAsync(order);
             }
         }
 
