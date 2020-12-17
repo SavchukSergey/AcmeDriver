@@ -9,9 +9,10 @@ namespace AcmeDriver.CLI {
 				throw new CLIException("--challenge is required");
 			}
 			var order = await RequireOrderAsync(options);
+			var client = await GetClientAsync(options);
 			foreach (var authUri in order.Authorizations) {
-				var authz = await _client.GetAuthorizationAsync(authUri);
-				var httpChallenge = authz.GetHttp01Challenge(_client.Registration);
+				var authz = await client.Authorizations.GetAuthorizationAsync(authUri);
+				var httpChallenge = authz.GetHttp01Challenge(client.Registration);
 				if (httpChallenge != null) {
 					var path = Path.Combine(options.ChallengePath, httpChallenge.FileName);
 					using var writer = new StreamWriter(path);

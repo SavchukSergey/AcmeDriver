@@ -10,9 +10,10 @@ namespace AcmeDriver.CLI {
             }
             var order = await RequireOrderAsync(options);
             var csr = await RequireCsrAsync(options);
-            var newOrder = await _client.FinalizeOrderAsync(order, csr);
+            var client = await GetClientAsync(options);
+            var newOrder = await client.Orders.FinalizeOrderAsync(order, csr);
             await SaveOrderAsync(options, newOrder);
-            var cert = await _client.DownloadCertificateAsync(newOrder);
+            var cert = await client.Orders.DownloadCertificateAsync(newOrder);
             var writer = new StreamWriter(options.CrtFile);
             await writer.WriteAsync(cert);
             await writer.FlushAsync();

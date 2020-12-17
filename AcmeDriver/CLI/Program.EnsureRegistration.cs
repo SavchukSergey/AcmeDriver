@@ -5,7 +5,7 @@ namespace AcmeDriver.CLI {
 
         private static async Task EnsureRegistrationAsync(CommandLineOptions options) {
             try {
-                await RequireRegistrationAsync(options);
+                await GetClientAsync(options);
             } catch {
                 await NewRegistrationAsync(options);
             }
