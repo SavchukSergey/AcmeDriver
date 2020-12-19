@@ -18,7 +18,7 @@ namespace AcmeDriver {
 			return await _context.SendPostKidAsync<object, AcmeOrder>(_context.Directory.NewOrderUrl, new {
 				identifiers = order.Identifiers,
 			}, (headers, ord) => {
-				ord.Location = headers.Location;
+				ord.Location = headers.Location ?? order.Location;
 			}).ConfigureAwait(false);
 		}
 
@@ -26,7 +26,7 @@ namespace AcmeDriver {
 			return await _context.SendPostKidAsync<object, AcmeOrder>(order.Finalize, new {
 				csr = Base64Url.Encode(csr.GetPemCsrData())
 			}, (headers, ord) => {
-				ord.Location = headers.Location;
+				ord.Location = headers.Location ?? order.Location;
 			}).ConfigureAwait(false);
 		}
 

@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
 namespace AcmeDriver.JWK {
@@ -40,6 +41,27 @@ namespace AcmeDriver.JWK {
         }
 
         public static RsaPrivateJwk From(RSAParameters parameters) {
+            if (parameters.Modulus == null) {
+                throw new ArgumentNullException(nameof(parameters.Modulus));
+            }
+            if (parameters.Exponent == null) {
+                throw new ArgumentNullException(nameof(parameters.Exponent));
+            }
+            if (parameters.D == null) {
+                throw new ArgumentNullException(nameof(parameters.D));
+            }
+            if (parameters.P == null) {
+                throw new ArgumentNullException(nameof(parameters.P));
+            }
+            if (parameters.DP == null) {
+                throw new ArgumentNullException(nameof(parameters.DP));
+            }
+            if (parameters.DQ == null) {
+                throw new ArgumentNullException(nameof(parameters.DQ));
+            }
+            if (parameters.InverseQ == null) {
+                throw new ArgumentNullException(nameof(parameters.InverseQ));
+            }
             return new RsaPrivateJwk {
                 Modulus = Base64Url.Encode(parameters.Modulus),
                 Exponent = Base64Url.Encode(parameters.Exponent),

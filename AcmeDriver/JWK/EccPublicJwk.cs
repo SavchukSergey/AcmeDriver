@@ -1,4 +1,5 @@
 ﻿using AcmeDriver.Utils;
+using System;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
@@ -26,6 +27,12 @@ namespace AcmeDriver.JWK {
         }
 
         public static EccPublicJwk From(ECParameters publicKey) {
+            if (publicKey.Q.X == null) {
+                throw new ArgumentNullException(nameof(publicKey.Q.X));
+            }
+            if (publicKey.Q.Y == null) {
+                throw new ArgumentNullException(nameof(publicKey.Q.Y));
+            }
             return new EccPublicJwk {
                 Curve = ECUtils.GetFipsCurveName(publicKey.Curve),
                 X = Base64Url.Encode(publicKey.Q.X),

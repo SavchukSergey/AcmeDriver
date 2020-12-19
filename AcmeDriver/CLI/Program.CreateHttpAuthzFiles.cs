@@ -8,6 +8,7 @@ namespace AcmeDriver.CLI {
 			if (string.IsNullOrWhiteSpace(options.ChallengePath)) {
 				throw new CLIException("--challenge is required");
 			}
+			Directory.CreateDirectory(options.ChallengePath);
 			var order = await RequireOrderAsync(options);
 			var client = await GetClientAsync(options);
 			foreach (var authUri in order.Authorizations) {

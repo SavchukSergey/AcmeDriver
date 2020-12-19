@@ -88,5 +88,17 @@ namespace AcmeDriver.CLI {
 			}
 		}
 
+		private static async Task SaveRegistrationAsync(AcmeClientRegistration reg, string filename) {
+			try {
+				var content = PrivateKeyUtils.ToPem(reg.Key);
+				using var file = File.Open(filename, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+				using var writer = new StreamWriter(file);
+				await writer.WriteAsync(content);
+				await writer.FlushAsync();
+			} catch (Exception exc) {
+				throw new CLIException("Unable to save account", exc);
+			}
+		}
+
 	}
 }

@@ -51,7 +51,7 @@ namespace AcmeDriver {
 
 		public Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model, AcmeClientRegistration registration) where TResult : AcmeResource {
 			return SendPostAsync<TSource, TResult>(uri, model, registration, (headers, authz) => {
-				authz.Location = headers.Location;
+				authz.Location = headers.Location ?? authz.Location;
 			});
 		}
 

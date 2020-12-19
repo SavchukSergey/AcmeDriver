@@ -28,6 +28,15 @@ namespace AcmeDriver.JWK {
         }
 
         public static EccPrivateJwk From(ECParameters privateKey) {
+            if (privateKey.Q.X == null) {
+                throw new ArgumentNullException(nameof(privateKey.Q.X));
+            }
+            if (privateKey.Q.Y == null) {
+                throw new ArgumentNullException(nameof(privateKey.Q.Y));
+            }
+            if (privateKey.D == null) {
+                throw new ArgumentNullException(nameof(privateKey.D));
+            }
             return new EccPrivateJwk {
                 Curve = ECUtils.GetFipsCurveName(privateKey.Curve),
                 X = Base64Url.Encode(privateKey.Q.X),

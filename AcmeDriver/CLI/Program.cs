@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AcmeDriver.Utils;
@@ -56,23 +55,7 @@ namespace AcmeDriver.CLI {
 						await FinalizeOrderAsync(options);
 						break;
 					case "help":
-						Console.WriteLine("help                       Show this screen");
-						Console.WriteLine("new-reg [contacts]+        New registration");
-						Console.WriteLine("load-reg [filename]        Load registration from file");
-						Console.WriteLine("save-reg [filename]        Save registration to file");
-						Console.WriteLine("reg                        Show registration info");
-						Console.WriteLine("new-order [identifier]+    Request new order");
-						Console.WriteLine("order                      Refresh order & show order info");
-						Console.WriteLine("finalize-order [csr-path]  Finalize order");
-						Console.WriteLine("accept-tos                 Accept terms of use");
-						Console.WriteLine("new-authz [domain]         Request new authorization");
-						Console.WriteLine("load-authz [domain]        Load authorization");
-						Console.WriteLine("authz                      Refresh authz & show authorization info");
-						Console.WriteLine("complete-dns-01            Complete dns-01 challenge");
-						Console.WriteLine("complete-http-01           Complete http-01 challenge");
-						Console.WriteLine("prevalidate-dns-01         Prevalidate dns-01 challenge");
-						Console.WriteLine("prevalidate-http-01        Prevalidate http-01 challenge");
-						Console.WriteLine("exit                       Exit");
+						await ShowHelpAsync(options);
 						break;
 					case "exit":
 						return;
@@ -99,7 +82,7 @@ namespace AcmeDriver.CLI {
 
 			Console.WriteLine();
 			Console.WriteLine("Authorizations:");
-            var client = await GetClientAsync(options);
+			var client = await GetClientAsync(options);
 			foreach (var authUri in order.Authorizations) {
 				var authz = await client.Authorizations.GetAuthorizationAsync(authUri);
 				await ShowChallengeInfoAsync(authz, options);
@@ -107,7 +90,7 @@ namespace AcmeDriver.CLI {
 		}
 
 		private static async Task ShowChallengeInfoAsync(AcmeAuthorization authz, CommandLineOptions options) {
-            var client = await GetClientAsync(options);
+			var client = await GetClientAsync(options);
 			Console.WriteLine($"Authorization: {authz.Identifier.Value}");
 			Console.WriteLine($"Status:        {authz.Status}");
 			Console.WriteLine($"Expires:       {authz.Expires:dd MMM yyy}");
@@ -151,33 +134,12 @@ namespace AcmeDriver.CLI {
 
 		#region Load & Saving
 
-		private static async Task SaveRegistrationAsync(AcmeClientRegistration reg, string filename) {
-			try {
-				var content = PrivateKeyUtils.ToPem(reg.Key);
-				using var file = File.Open(filename, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
-				using var writer = new StreamWriter(file);
-				await writer.WriteAsync(content);
-				await writer.FlushAsync();
-			} catch (Exception exc) {
-				throw new CLIException("Unable to save account", exc);
-			}
-		}
-
 		private static T Deserialize<T>(string content) {
 			return AcmeJson.Deserialize<T>(content);
 		}
 
 		private static string Serialize(AcmeOrderModel order) {
 			return AcmeJson.Serialize(order);
-		}
-
-		#endregion
-
-		#region Help
-
-		private static void ShowNewOrderHelp() {
-			Console.WriteLine("new-order requests new order");
-			Console.WriteLine("Usage: new-order domain.com");
 		}
 
 		#endregion

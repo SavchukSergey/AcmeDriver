@@ -7,7 +7,7 @@ namespace AcmeDriver.CLI {
 
 		private static async Task NewOrderAsync(CommandLineOptions options) {
 			if (options.Domains.Count == 0) {
-				ShowNewOrderHelp();
+				await ShowNewOrderHelpAsync(options);
 			} else {
 				var now = DateTime.UtcNow;
 				var client = await GetClientAsync(options);
