@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AcmeDriver.Utils;
@@ -23,6 +23,9 @@ namespace AcmeDriver.CLI {
 					case "dump-reg":
 						var dumpReg = (await GetClientAsync(options)).Registration;
 						ShowRegistrationInfo(dumpReg);
+						break;
+					case "dump-order":
+						await DumpOrderAsync(options);
 						break;
 					case "accept-tos":
 						await AcceptToSAsync(options);
@@ -153,7 +156,7 @@ namespace AcmeDriver.CLI {
 
 		private static void WriteException(Exception exc) {
 			Console.WriteLine(exc.Message);
-			Console.WriteLine(exc.StackTrace);
+			// Console.WriteLine(exc.StackTrace);
 			if (exc.InnerException != null) {
 				WriteException(exc.InnerException);
 			}

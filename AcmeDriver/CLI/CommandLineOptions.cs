@@ -31,6 +31,8 @@ namespace AcmeDriver.CLI {
         public string? Subject { get; set; }
         
         public string? OrderFile { get; set; }
+        
+        public Uri? OrderUrl { get; set; }
 
 		public string? CsrFile { get; set; }
 		
@@ -80,6 +82,10 @@ namespace AcmeDriver.CLI {
                         case "--order":
                             enumerator.MoveNext();
                             res.OrderFile = enumerator.Current;
+                            break;
+                        case "--order-url":
+                            enumerator.MoveNext();
+                            res.OrderUrl = new Uri(enumerator.Current);
                             break;
                         case "--private-key":
                             enumerator.MoveNext();
