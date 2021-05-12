@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AcmeDriver.Utils;
@@ -6,7 +6,7 @@ using AcmeDriver.Utils;
 namespace AcmeDriver.CLI {
 	public partial class Program {
 
-		private static AcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_PRODUCTION_URL);
+		private static IAcmeClient _client = new AcmeClient(AcmeClient.LETS_ENCRYPT_PRODUCTION_URL);
 
 		public static async Task Main(string[] args) {
 			var options = CommandLineOptions.Parse(args);

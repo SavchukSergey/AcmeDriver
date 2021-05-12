@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 namespace AcmeDriver {
-	public class AcmeOrdersClient {
+	public class AcmeOrdersClient : IAcmeOrdersClient{
 
 		private readonly AcmeAuthenticatedClientContext _context;
 

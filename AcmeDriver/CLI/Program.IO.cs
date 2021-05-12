@@ -7,7 +7,7 @@ using AcmeDriver.Utils;
 namespace AcmeDriver.CLI {
 	public partial class Program {
 
-		private static async Task<AcmeAuthenticatedClient> GetClientAsync(CommandLineOptions options) {
+		private static async Task<IAcmeAuthenticatedClient> GetClientAsync(CommandLineOptions options) {
 			try {
 				var key = await LoadAccountPrivateKeyAsync(options);
 				var jwk = PrivateKeyUtils.ToPrivateJsonWebKey(key);

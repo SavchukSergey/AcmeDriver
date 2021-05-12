@@ -6,7 +6,6 @@ namespace AcmeDriver.CLI {
 
 		public static async Task AcceptToSAsync(CommandLineOptions options) {
 			var client = await GetClientAsync(options);
-			var directory = client.Directory;
 			Console.WriteLine("Accepting terms of use");
 			await client.Registrations.AcceptAgreementAsync();
 		}

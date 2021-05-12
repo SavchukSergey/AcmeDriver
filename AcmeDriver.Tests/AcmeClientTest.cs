@@ -9,7 +9,7 @@ namespace AcmeDriver.Tests {
 		[Test]
 		public async Task GetDirectoryAsyncTest() {
 			using var client = await AcmeClient.CreateAcmeClientAsync(AcmeClient.LETS_ENCRYPT_STAGING_URL);
-			var directory = client.Directory;
+			var directory = await client.GetDirectoryAsync();
 			Assert.IsNotNull(directory.NewNonceUrl);
 			Assert.IsNotNull(directory.NewAccountUrl);
 			Assert.IsNotNull(directory.NewOrderUrl);
