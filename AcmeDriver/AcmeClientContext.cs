@@ -69,7 +69,7 @@ namespace AcmeDriver {
 			}
 			var dataContent = AcmeJson.Serialize(model);
 			var data = Encoding.UTF8.GetBytes(dataContent);
-			return await UseNonceAsync(async nonce => {
+			return await SendWithNonceAsync(async nonce => {
 				var signedContent = registration.SignKid(uri, nonce, data);
 
 				var response = await PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
@@ -87,6 +87,31 @@ namespace AcmeDriver {
 			return await ProcessRequestStringAsync(response, headersHandler).ConfigureAwait(false);
 		}
 
+		public async Task<TResult> SendWithNonceAsync<TResult>(Func<string, Task<TResult>> action) {
+			try {
+				return await SendWithNonceOnceAsync(action);
+			} catch (AcmeException exc) {
+				if (exc.Type == "urn:ietf:params:acme:error:badNonce") {
+					return await SendWithNonceOnceAsync(action);
+				}
+				throw;
+			}
+		}
+
+		private async Task<TResult> SendWithNonceOnceAsync<TResult>(Func<string, Task<TResult>> action) {
+			await _semaphore.WaitAsync();
+			try {
+				if (string.IsNullOrWhiteSpace(Nonce)) {
+					if (Directory.NewNonceUrl != null) {
+						await SendHeadAsync(Directory.NewNonceUrl).ConfigureAwait(false);
+					}
+				}
+				return await action(Nonce!);
+			} finally {
+				_semaphore.Release();
+			}
+		}
+
 		private async Task<byte[]> SendPostAsGetBytesAsync(Uri uri, AcmeClientRegistration registration, Action<HttpResponseHeaders, byte[]>? headersHandler = null) {
 			var response = await SendPostAsGetResponseAsync(uri, registration).ConfigureAwait(false);
 			return await ProcessRequestBytesAsync(response, headersHandler).ConfigureAwait(false);
@@ -101,7 +126,7 @@ namespace AcmeDriver {
 			}
 
 			var data = Array.Empty<byte>();
-			return await UseNonceAsync(async nonce => {
+			return await SendWithNonceAsync(async nonce => {
 				var signedContent = registration.SignKid(uri, nonce, data);
 
 				var response = await PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
@@ -118,17 +143,11 @@ namespace AcmeDriver {
 			}
 			var dataContent = AcmeJson.Serialize(model);
 			var data = Encoding.UTF8.GetBytes(dataContent);
-			return await UseNonceAsync(async nonce => {
+			return await SendWithNonceAsync(async nonce => {
 				var signedContent = registration.Sign(uri, nonce, data);
 
 				return await PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
 			});
-		}
-
-		public async Task InvalidateNonceAsync() {
-			await _semaphore.WaitAsync();
-			Nonce = null;
-			_semaphore.Release();
 		}
 
 		public void Dispose() {
@@ -169,20 +188,6 @@ namespace AcmeDriver {
 			var res = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			headersHandler?.Invoke(response.Headers, res);
 			return res;
-		}
-
-		private async Task<TResult> UseNonceAsync<TResult>(Func<string, Task<TResult>> action) {
-			await _semaphore.WaitAsync();
-			try {
-				if (string.IsNullOrWhiteSpace(Nonce)) {
-					if (Directory.NewNonceUrl != null) {
-						await SendHeadAsync(Directory.NewNonceUrl).ConfigureAwait(false);
-					}
-				}
-				return await action(Nonce!);
-			} finally {
-				_semaphore.Release();
-			}
 		}
 
 		private Task<HttpResponseMessage> SendAsync(HttpRequestMessage request) {

@@ -11,7 +11,5 @@ namespace AcmeDriver {
 
 		AcmeClientRegistration Registration { get; }
 
-		Task InvalidateNonceAsync();
-
 	}
 }

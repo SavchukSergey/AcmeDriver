@@ -24,9 +24,5 @@ namespace AcmeDriver {
             _registrations = new Lazy<IAcmeRegistrationsClient>(() => new AcmeRegistrationsClient(_context));
 		}
 
-        public Task InvalidateNonceAsync() {
-            return _context.InvalidateNonceAsync();
-        }
-
 	}
 }

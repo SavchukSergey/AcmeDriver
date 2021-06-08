@@ -34,9 +34,5 @@ namespace AcmeDriver {
 			return _inner.SendPostAsGetStringAsync(uri, Registration, headersHandler);
 		}
 
-		public Task InvalidateNonceAsync() {
-			return _inner.InvalidateNonceAsync();
-		}
-
 	}
 }
