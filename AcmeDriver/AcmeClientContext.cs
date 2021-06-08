@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AcmeDriver.Handlers;
 using AcmeDriver.Utils;
@@ -14,6 +15,7 @@ namespace AcmeDriver {
 		public string? Nonce { get; set; }
 
 		public AcmeDirectory Directory { get; }
+		private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
 		public AcmeClientContext(AcmeDirectory directory) {
 			Directory = directory;
@@ -25,29 +27,18 @@ namespace AcmeDriver {
 			});
 		}
 
-        public async Task<string> EnsureNonceAsync() {
-			if (Nonce != null) {
-				return Nonce;
-			}
-            if (Directory.NewNonceUrl != null) {
-                return await NewNonceAsync().ConfigureAwait(false);
-            } else {
-                return string.Empty;
-            }
-        }
+		public async Task<TResult> SendGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
+			var request = new HttpRequestMessage(HttpMethod.Get, uri);
+			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+			var response = await SendAsync(request).ConfigureAwait(false);
+			return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
+		}
 
-        public async Task<TResult> SendGetAsync<TResult>(Uri uri, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
-            var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            var response = await _client.SendAsync(request).ConfigureAwait(false);
-            return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
-        }
-
-        public async Task SendHeadAsync(Uri uri) {
-            var request = new HttpRequestMessage(HttpMethod.Head, uri);
-            var response = await _client.SendAsync(request).ConfigureAwait(false);
-            await ProcessRequestAsync(response).ConfigureAwait(false);
-        }
+		public async Task SendHeadAsync(Uri uri) {
+			var request = new HttpRequestMessage(HttpMethod.Head, uri);
+			var response = await SendAsync(request).ConfigureAwait(false);
+			await ProcessRequestAsync(response).ConfigureAwait(false);
+		}
 
 		public Task<TResult> SendPostAsync<TSource, TResult>(Uri uri, TSource model, AcmeClientRegistration registration) where TResult : AcmeResource {
 			return SendPostAsync<TSource, TResult>(uri, model, registration, (headers, authz) => {
@@ -70,7 +61,6 @@ namespace AcmeDriver {
 		}
 
 		public async Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, AcmeClientRegistration registration, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
-			var nonce = await EnsureNonceAsync();
 			if (uri == null) {
 				throw new ArgumentNullException(nameof(uri));
 			}
@@ -79,10 +69,12 @@ namespace AcmeDriver {
 			}
 			var dataContent = AcmeJson.Serialize(model);
 			var data = Encoding.UTF8.GetBytes(dataContent);
-			var signedContent = registration.SignKid(uri, nonce, data);
+			return await UseNonceAsync(async nonce => {
+				var signedContent = registration.SignKid(uri, nonce, data);
 
-			var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
-			return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
+				var response = await PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+				return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
+			});
 		}
 
 		public async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, AcmeClientRegistration registration, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
@@ -107,13 +99,14 @@ namespace AcmeDriver {
 			if (registration == null) {
 				throw new ArgumentNullException(nameof(registration));
 			}
-			var nonce = await EnsureNonceAsync();
 
-			var data = new byte[0];
-			var signedContent = registration.SignKid(uri, nonce, data);
+			var data = Array.Empty<byte>();
+			return await UseNonceAsync(async nonce => {
+				var signedContent = registration.SignKid(uri, nonce, data);
 
-			var response = await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
-			return response;
+				var response = await PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+				return response;
+			});
 		}
 
 		public async Task<HttpResponseMessage> SendPostResponseAsync<TSource>(Uri uri, TSource model, AcmeClientRegistration registration) {
@@ -123,16 +116,18 @@ namespace AcmeDriver {
 			if (registration == null) {
 				throw new ArgumentNullException(nameof(registration));
 			}
-			var nonce = await EnsureNonceAsync();
 			var dataContent = AcmeJson.Serialize(model);
 			var data = Encoding.UTF8.GetBytes(dataContent);
-			var signedContent = registration.Sign(uri, nonce, data);
+			return await UseNonceAsync(async nonce => {
+				var signedContent = registration.Sign(uri, nonce, data);
 
-			return await _client.PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+				return await PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+			});
 		}
 
 		public void Dispose() {
 			_client.Dispose();
+			_semaphore.Dispose();
 		}
 
 		private StringContent GetStringContent(string val) {
@@ -170,14 +165,27 @@ namespace AcmeDriver {
 			return res;
 		}
 
-        private async Task<string> NewNonceAsync() {
-            if (Directory.NewNonceUrl != null) {
-                await SendHeadAsync(Directory.NewNonceUrl).ConfigureAwait(false);
-                return Nonce;
-            } else {
-                return string.Empty;
-            }
-        }
+		private async Task<TResult> UseNonceAsync<TResult>(Func<string, Task<TResult>> action) {
+			await _semaphore.WaitAsync();
+			try {
+				if (string.IsNullOrWhiteSpace(Nonce)) {
+					if (Directory.NewNonceUrl != null) {
+						await SendHeadAsync(Directory.NewNonceUrl).ConfigureAwait(false);
+					}
+				}
+				return await action(Nonce!);
+			} finally {
+				_semaphore.Release();
+			}
+		}
+
+		private Task<HttpResponseMessage> SendAsync(HttpRequestMessage request) {
+			return _client.SendAsync(request);
+		}
+
+		private Task<HttpResponseMessage> PostAsync(Uri uri, HttpContent content) {
+			return _client.PostAsync(uri, content);
+		}
 
 	}
 }
