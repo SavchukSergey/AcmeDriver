@@ -125,6 +125,12 @@ namespace AcmeDriver {
 			});
 		}
 
+		public async Task InvalidateNonceAsync() {
+			await _semaphore.WaitAsync();
+			Nonce = null;
+			_semaphore.Release();
+		}
+
 		public void Dispose() {
 			_client.Dispose();
 			_semaphore.Dispose();

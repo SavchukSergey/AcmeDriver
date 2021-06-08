@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace AcmeDriver {
 	public class AcmeAuthenticatedClient : IAcmeAuthenticatedClient {
@@ -22,6 +23,10 @@ namespace AcmeDriver {
             _authorizations = new Lazy<IAcmeAuthorizationsClient>(() => new AcmeAuthorizationsClient(_context));
             _registrations = new Lazy<IAcmeRegistrationsClient>(() => new AcmeRegistrationsClient(_context));
 		}
+
+        public Task InvalidateNonceAsync() {
+            return _context.InvalidateNonceAsync();
+        }
 
 	}
 }

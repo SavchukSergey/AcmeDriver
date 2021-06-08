@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace AcmeDriver {
 	public interface IAcmeAuthenticatedClient {
 
@@ -8,6 +10,8 @@ namespace AcmeDriver {
 		IAcmeRegistrationsClient Registrations { get; }
 
 		AcmeClientRegistration Registration { get; }
-		
+
+		Task InvalidateNonceAsync();
+
 	}
 }
