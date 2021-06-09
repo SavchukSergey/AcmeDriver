@@ -88,13 +88,24 @@ namespace AcmeDriver {
 		}
 
 		public async Task<TResult> SendWithNonceAsync<TResult>(Func<string, Task<TResult>> action) {
-			try {
-				return await SendWithNonceOnceAsync(action);
-			} catch (AcmeException exc) {
-				if (exc.Type == "urn:ietf:params:acme:error:badNonce") {
+			var tries = 0;
+			while (true) {
+				tries++;
+				try {
 					return await SendWithNonceOnceAsync(action);
+				} catch (AcmeException exc) {
+					if (tries >= 5) {
+						throw;
+					}
+					if (exc.Type == "urn:ietf:params:acme:error:badNonce") {
+						continue;
+					}
+					if (exc.Type == "urn:ietf:params:acme:error:rateLimited") {
+						await Task.Delay(TimeSpan.FromSeconds(tries));
+						continue;
+					}
+					throw;
 				}
-				throw;
 			}
 		}
 
