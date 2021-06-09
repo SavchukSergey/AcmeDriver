@@ -88,14 +88,23 @@ namespace AcmeDriver {
 		}
 
 		public async Task<TResult> SendWithNonceAsync<TResult>(Func<string, Task<TResult>> action) {
+			return await ExecWithRetryAsync(async () => {
+				return await SendWithNonceOnceAsync(action);
+			});
+		}
+
+		private async Task<TResult> ExecWithRetryAsync<TResult>(Func<Task<TResult>> action) {
 			var tries = 0;
 			while (true) {
 				tries++;
 				try {
-					return await SendWithNonceOnceAsync(action);
+					return await action();
 				} catch (AcmeException exc) {
 					if (tries >= 5) {
 						throw;
+					}
+					if (exc.Type == "") { //HEAD requests with no body
+						continue;
 					}
 					if (exc.Type == "urn:ietf:params:acme:error:badNonce") {
 						continue;
@@ -114,7 +123,10 @@ namespace AcmeDriver {
 			try {
 				if (string.IsNullOrWhiteSpace(Nonce)) {
 					if (Directory.NewNonceUrl != null) {
-						await SendHeadAsync(Directory.NewNonceUrl).ConfigureAwait(false);
+						await ExecWithRetryAsync(async () => {
+							await SendHeadAsync(Directory.NewNonceUrl).ConfigureAwait(false);
+							return 0;
+						});
 					}
 				}
 				return await action(Nonce!);
