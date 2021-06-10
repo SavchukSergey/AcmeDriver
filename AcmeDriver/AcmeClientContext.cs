@@ -103,7 +103,7 @@ namespace AcmeDriver {
 					if (tries >= 5) {
 						throw;
 					}
-					if (exc.Type == "") { //HEAD requests with no body
+					if (string.IsNullOrWhiteSpace(exc.Type)) { //HEAD requests with no body
 						continue;
 					}
 					if (exc.Type == "urn:ietf:params:acme:error:badNonce") {
