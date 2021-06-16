@@ -100,7 +100,7 @@ namespace AcmeDriver {
 				try {
 					return await action();
 				} catch (AcmeException exc) {
-					if (tries >= 5) {
+					if (tries >= 10) {
 						throw;
 					}
 					if (string.IsNullOrWhiteSpace(exc.Type)) { //HEAD requests with no body
