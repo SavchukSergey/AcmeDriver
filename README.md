@@ -24,7 +24,7 @@ var authz = await acme.Authorizations.GetAuthorizationAsync(authzUri);
 
 Console.WriteLine("Do one of the following:");
 
-var httpChallenge = authz.GetHttp01Challenge(acme.Registration);
+var httpChallenge = authz.GetHttp01Challenge();
 if (httpChallenge != null) {
     Console.WriteLine("Put file on your http server");
     Console.WriteLine($"FileName: {httpChallenge.FileName}");
@@ -33,7 +33,7 @@ if (httpChallenge != null) {
     Console.WriteLine();
 }
 
-var dnsChallenge = authz.GetDns01Challenge(acme.Registration);
+var dnsChallenge = authz.GetDns01Challenge();
 if (dnsChallenge != null) {
     Console.WriteLine("Create txt record");
     Console.WriteLine($"DnsRecord: {dnsChallenge.DnsRecord}");

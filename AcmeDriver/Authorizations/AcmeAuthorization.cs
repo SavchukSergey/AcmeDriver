@@ -1,23 +1,35 @@
 ﻿using System;
-using System.Text.Json.Serialization;
+using System.Linq;
 
 namespace AcmeDriver {
-    public class AcmeAuthorization : AcmeResource {
+	public class AcmeAuthorization {
 
-        [JsonPropertyName("identifier")]
-        public AcmeIdentifier Identifier { get; set; }
+		public AcmeIdentifier Identifier { get; }
 
-        [JsonPropertyName("status")]
-        public AcmeAuthorizationStatus Status { get; set; }
+		public AcmeAuthorizationStatus Status { get; }
 
-        [JsonPropertyName("expires")]
-        public DateTimeOffset Expires { get; set; }
+		public DateTimeOffset Expires { get; }
 
-        [JsonPropertyName("challenges")]
-        public AcmeChallengeData[] Challenges { get; set; }
+		public AcmeChallenge[] Challenges { get; }
 
-        [JsonPropertyName("wildcard")]
-        public bool Wildcard { get; set; }
+		public bool Wildcard { get; }
 
-    }
+		public Uri Location { get; }
+
+		public AcmeAuthorization(AcmeAuthorizationData data, AcmeClientRegistration registration) {
+			Identifier = data.Identifier;
+			Status = data.Status;
+			Expires = data.Expires;
+			Challenges = data.Challenges.Select<AcmeChallengeData, AcmeChallenge>(challengeData => {
+				return challengeData.Type switch {
+					"http-01" => new AcmeHttp01Challenge(challengeData, this, registration),
+					"dns-01" => new AcmeDns01Challenge(challengeData, this, registration),
+					_ => new AcmeUnknownChallenge(challengeData, this, registration)
+				};
+			}).ToArray();
+			Wildcard = data.Wildcard;
+			Location = data.Location;
+		}
+
+	}
 }

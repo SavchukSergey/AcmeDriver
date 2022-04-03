@@ -17,7 +17,7 @@ namespace AcmeDriver.CLI {
 				for (var i = 1; i <= 10; i++) {
 					yield return item.SetInfo($"{i}/10");
 					if (authz.Status == AcmeAuthorizationStatus.Pending) {
-						var httpChallenge = authz.GetHttp01Challenge(client.Registration);
+						var httpChallenge = authz.GetHttp01Challenge();
 						if (httpChallenge != null) {
 							if (await httpChallenge.PrevalidateAsync()) {
 								await client.Authorizations.CompleteChallengeAsync(httpChallenge);

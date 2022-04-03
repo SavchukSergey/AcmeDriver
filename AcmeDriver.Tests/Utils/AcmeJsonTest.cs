@@ -1,3 +1,4 @@
+using System;
 using AcmeDriver.JWK;
 using AcmeDriver.Utils;
 using NUnit.Framework;
@@ -22,7 +23,7 @@ namespace AcmeDriver.Tests {
             var data = AcmeJson.Deserialize<AcmeChallengeData>(content);
             Assert.AreEqual("1", data.Type);
             Assert.AreEqual("abc", data.Status);
-            Assert.AreEqual("http://google.com", data.Uri);
+            Assert.AreEqual(new Uri("http://google.com"), data.Url);
             Assert.AreEqual("token", data.Token);
             Assert.AreEqual("error.type", data.Error?.Type);
         }

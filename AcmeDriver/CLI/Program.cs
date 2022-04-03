@@ -101,12 +101,12 @@ namespace AcmeDriver.CLI {
 
 			Console.WriteLine();
 			Console.WriteLine("Challenges:");
-			var httpChallenge = authz.GetHttp01Challenge(client.Registration);
+			var httpChallenge = authz.GetHttp01Challenge();
 			if (httpChallenge != null) {
 				ShowChallengeInfo(httpChallenge);
 			}
 
-			var dnsChallenge = authz.GetDns01Challenge(client.Registration);
+			var dnsChallenge = authz.GetDns01Challenge();
 			if (dnsChallenge != null) {
 				ShowChallengeInfo(dnsChallenge);
 			}
@@ -119,7 +119,7 @@ namespace AcmeDriver.CLI {
 			Console.WriteLine($"FileContent:   {httpChallenge.FileContent}");
 			Console.WriteLine($"FileUri:       {httpChallenge.FileUri}");
 			Console.WriteLine($"---------------");
-			Console.WriteLine($"uri:           {httpChallenge.Data.Uri}");
+			Console.WriteLine($"uri:           {httpChallenge.Data.Url}");
 			Console.WriteLine();
 		}
 
@@ -129,7 +129,7 @@ namespace AcmeDriver.CLI {
 			Console.WriteLine($"DnsRecordType:    TXT");
 			Console.WriteLine($"DnsRecordContent: {dnsChallenge.DnsRecordContent}");
 			Console.WriteLine($"---------------");
-			Console.WriteLine($"uri:              {dnsChallenge.Data.Uri}");
+			Console.WriteLine($"uri:              {dnsChallenge.Data.Url}");
 			Console.WriteLine($"nslookup:         {dnsChallenge.NslookupCmd}");
 			Console.WriteLine($"google dns:       {dnsChallenge.GoogleUiApiUrl}");
 			Console.WriteLine();

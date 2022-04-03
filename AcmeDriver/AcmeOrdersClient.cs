@@ -31,6 +31,9 @@ namespace AcmeDriver {
 		}
 
 		public Task<string> DownloadCertificateAsync(AcmeOrder order) {
+			if (order.Certificate == null) {
+				throw new ArgumentException("Order's certificate field is null");
+			}
 			return _context.SendPostAsGetStringAsync(order.Certificate);
 		}
 

@@ -53,6 +53,9 @@ namespace AcmeDriver.JWK {
             if (parameters.P == null) {
                 throw new ArgumentNullException(nameof(parameters.P));
             }
+            if (parameters.Q == null) {
+                throw new ArgumentNullException(nameof(parameters.Q));
+            }
             if (parameters.DP == null) {
                 throw new ArgumentNullException(nameof(parameters.DP));
             }

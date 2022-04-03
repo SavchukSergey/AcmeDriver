@@ -9,7 +9,7 @@ namespace AcmeDriver {
 
 		Task<IAcmeAuthenticatedClient> RegisterAsync(string[] contacts, PrivateJsonWebKey? key = null);
 
-		Task<IAcmeAuthenticatedClient> AuthenticateAsync(PrivateJsonWebKey key);
+		Task<IAcmeAuthenticatedClient> AuthenticateAsync(PrivateJsonWebKey key, Uri? location = null);
 
 	}
 }

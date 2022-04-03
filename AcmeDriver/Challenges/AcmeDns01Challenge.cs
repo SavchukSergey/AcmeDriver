@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using AcmeDriver.Utils;
@@ -12,13 +14,20 @@ namespace AcmeDriver {
 
         public string DnsAddress => $"{DnsRecord}.{Domain}";
 
-        public string DnsRecordContent { get; set; }
+        public string DnsRecordContent { get; }
 
         public string NslookupCmd => $"nslookup -type=TXT {DnsAddress}";
 
         public string GoogleApiUrl => $"https://dns.google.com/resolve?name={DnsAddress}&type=TXT";
 
         public string GoogleUiApiUrl => $"https://dns.google.com/query?name={DnsAddress}&type=TXT";
+
+        public AcmeDns01Challenge(AcmeChallengeData data, AcmeAuthorization authorization, AcmeClientRegistration registration) : base(data, authorization, registration) {
+            var keyAuthorization = data.GetKeyAuthorization(registration);
+			using (var sha256 = SHA256.Create()) {
+                DnsRecordContent = Base64Url.Encode(sha256.ComputeHash(Encoding.UTF8.GetBytes(keyAuthorization)));
+			}	
+        }
 
         public override async Task<bool> PrevalidateAsync() {
             try {

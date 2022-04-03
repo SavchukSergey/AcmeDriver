@@ -13,7 +13,7 @@ namespace AcmeDriver.CLI {
 			var client = await GetClientAsync(options);
 			foreach (var authUri in order.Authorizations) {
 				var authz = await client.Authorizations.GetAuthorizationAsync(authUri);
-				var httpChallenge = authz.GetHttp01Challenge(client.Registration);
+				var httpChallenge = authz.GetHttp01Challenge();
 				if (httpChallenge != null) {
 					var path = Path.Combine(options.ChallengePath, httpChallenge.FileName);
 					using var writer = new StreamWriter(path);

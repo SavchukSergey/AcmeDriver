@@ -11,13 +11,17 @@ namespace AcmeDriver {
 		}
 
 		public async Task<AcmeAuthorization> NewAuthorizationAsync(AcmeIdentifier identifier) {
-			return await _context.SendPostAsync<object, AcmeAuthorization>(_context.Directory.NewAuthzUrl, new {
+			if (_context.Directory.NewAuthzUrl == null) {
+				throw new NotSupportedException("New authorization endpoint is not supported");
+			}
+			var data = await _context.SendPostAsync<object, AcmeAuthorizationData>(_context.Directory.NewAuthzUrl, new {
 				resource = "new-authz",
 				identifier = new {
 					type = identifier.Type,
 					value = identifier.Value
 				}
 			}).ConfigureAwait(false);
+			return new AcmeAuthorization(data, _context.Registration);
 		}
 
 		public Task<AcmeAuthorization> NewAuthorizationAsync(string domainName) {
@@ -28,9 +32,9 @@ namespace AcmeDriver {
 		}
 
 		public async Task<AcmeAuthorization> GetAuthorizationAsync(Uri location) {
-			var data = await _context.SendPostAsGetAsync<AcmeAuthorization>(location).ConfigureAwait(false);
+			var data = await _context.SendPostAsGetAsync<AcmeAuthorizationData>(location).ConfigureAwait(false);
 			data.Location = location;
-			return data;
+			return new AcmeAuthorization(data, _context.Registration);
 		}
 
 		///<summary>
@@ -60,7 +64,7 @@ namespace AcmeDriver {
 		}
 
 		public Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge) {
-			return _context.SendPostKidAsync<object, AcmeChallengeData>(new Uri(challenge.Uri), new {
+			return _context.SendPostKidAsync<object, AcmeChallengeData>(challenge.Url, new {
 				type = challenge.Type,
 				keyAuthorization = challenge.GetKeyAuthorization(_context.Registration)
 			});

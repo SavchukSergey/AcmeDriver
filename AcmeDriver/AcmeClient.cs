@@ -22,8 +22,8 @@ namespace AcmeDriver {
 			_context = new AcmeClientContext(directory);
 		}
 
-		public async Task<IAcmeAuthenticatedClient> AuthenticateAsync(PrivateJsonWebKey key) {
-			var registration = await GetRegistrationAsync(key);
+		public async Task<IAcmeAuthenticatedClient> AuthenticateAsync(PrivateJsonWebKey key, Uri? location = null) {
+			var registration = await GetRegistrationAsync(key, location);
 			return new AcmeAuthenticatedClient(new AcmeAuthenticatedClientContext(_context, registration));
 		}
 
@@ -65,7 +65,10 @@ namespace AcmeDriver {
 			return RsaPrivateJwk.Create();
 		}
 
-		private async Task<AcmeClientRegistration> GetRegistrationAsync(PrivateJsonWebKey key) {
+		private async Task<AcmeClientRegistration> GetRegistrationAsync(PrivateJsonWebKey key, Uri? location = null) {
+			if (location != null) {
+				return new AcmeClientRegistration(key, location);
+			}
 			var reg = new AcmeClientRegistration(key, new Uri("https://acmedriver.com"));
 			var data = await _context.SendPostAsync<object, AcmeRegistration>(Directory.NewAccountUrl, new {
 				onlyReturnExisting = true
