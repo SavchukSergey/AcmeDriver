@@ -20,13 +20,9 @@ namespace AcmeDriver {
 			Identifier = data.Identifier;
 			Status = data.Status;
 			Expires = data.Expires;
-			Challenges = data.Challenges.Select<AcmeChallengeData, AcmeChallenge>(challengeData => {
-				return challengeData.Type switch {
-					"http-01" => new AcmeHttp01Challenge(challengeData, this, registration),
-					"dns-01" => new AcmeDns01Challenge(challengeData, this, registration),
-					_ => new AcmeUnknownChallenge(challengeData, this, registration)
-				};
-			}).ToArray();
+			Challenges = data.Challenges
+				.Select(challengeData => AcmeChallenge.From(challengeData, this, registration))
+				.ToArray();
 			Wildcard = data.Wildcard;
 			Location = data.Location;
 		}

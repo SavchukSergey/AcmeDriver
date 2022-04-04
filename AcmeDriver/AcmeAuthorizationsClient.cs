@@ -59,15 +59,13 @@ namespace AcmeDriver {
 			});
 		}
 
-		public Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge challenge) {
-			return CompleteChallengeAsync(challenge.Data);
-		}
-
-		public Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge) {
-			return _context.SendPostKidAsync<object, AcmeChallengeData>(challenge.Url, new {
-				type = challenge.Type,
-				keyAuthorization = challenge.GetKeyAuthorization(_context.Registration)
+		public async Task<AcmeChallenge> CompleteChallengeAsync(AcmeChallenge challenge) {
+			var data = challenge.Data;
+			var res = await _context.SendPostKidAsync<object, AcmeChallengeData>(data.Url, new {
+				type = data.Type,
+				keyAuthorization = data.GetKeyAuthorization(_context.Registration)
 			});
+			return AcmeChallenge.From(res, challenge.Authorization, _context.Registration);
 		}
 
 	}

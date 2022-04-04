@@ -14,9 +14,7 @@ namespace AcmeDriver {
 
 		Task DeleteAuthorizationAsync(Uri authorizationUri);
 
-		Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallenge challenge);
-
-		Task<AcmeChallengeData> CompleteChallengeAsync(AcmeChallengeData challenge);
+		Task<AcmeChallenge> CompleteChallengeAsync(AcmeChallenge challenge);
 
 	}
 }
