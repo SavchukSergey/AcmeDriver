@@ -1,4 +1,4 @@
-Donations: ```bitcoin:1JBnxLMNdvLcEcSP1hrGxdfy3kf7RNnmde```
+Donations: ```xmr:85ymLpYPmo8SAWCL73SQoQadDhkKtGhJRGAy2JViEpqpSNjsEi5tVeSVguGr5HcSEUSGrDTt1TpzAhy9gntC4YZd7oPVd4z```
 
 # CLI
 ```
