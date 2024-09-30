@@ -7,16 +7,16 @@ namespace AcmeDriver.JWK {
     public class EccPrivateJwk : PrivateJsonWebKey {
 
         [JsonPropertyName("crv")]
-        public string Curve { get; set; }
+        public string Curve { get; set; } = default!;
 
         [JsonPropertyName("x")]
-        public string X { get; set; }
+        public string X { get; set; } = default!;
 
         [JsonPropertyName("y")]
-        public string Y { get; set; }
+        public string Y { get; set; } = default!;
 
         [JsonPropertyName("d")]
-        public string D { get; set; }
+        public string D { get; set; } = default!;
 
         public override string Kty => "EC";
 

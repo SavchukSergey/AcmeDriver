@@ -5,7 +5,7 @@ namespace AcmeDriver {
     public abstract class AcmeResource {
 
         [JsonIgnore]
-        public Uri Location { get; set; }
+        public Uri Location { get; set; } = default!;
 
     }
 }

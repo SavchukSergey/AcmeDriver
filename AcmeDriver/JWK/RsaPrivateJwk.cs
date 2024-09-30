@@ -6,28 +6,28 @@ namespace AcmeDriver.JWK {
     public class RsaPrivateJwk : PrivateJsonWebKey {
 
         [JsonPropertyName("n")]
-        public string Modulus { get; set; }
+        public string Modulus { get; set; } = default!;
 
         [JsonPropertyName("e")]
-        public string Exponent { get; set; }
+        public string Exponent { get; set; } = default!;
 
         [JsonPropertyName("d")]
-        public string D { get; set; }
+        public string D { get; set; } = default!;
 
         [JsonPropertyName("p")]
-        public string P { get; set; }
+        public string P { get; set; } = default!;
 
         [JsonPropertyName("q")]
-        public string Q { get; set; }
+        public string Q { get; set; } = default!;
 
         [JsonPropertyName("dp")]
-        public string DP { get; set; }
+        public string DP { get; set; } = default!;
 
         [JsonPropertyName("dq")]
-        public string DQ { get; set; }
+        public string DQ { get; set; } = default!;
 
         [JsonPropertyName("qi")]
-        public string InverseQ { get; set; }
+        public string InverseQ { get; set; } = default!;
 
         public override string Kty => "RSA";
 

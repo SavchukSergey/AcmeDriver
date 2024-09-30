@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace AcmeDriver.CLI {
     public record CommandLineOptions {
 
-        public string Action { get; set; }
+        public string? Action { get; set; }
 
         public string Api { get; set; }
 
@@ -18,9 +18,9 @@ namespace AcmeDriver.CLI {
             }
         }
 
-        public IList<string> Contacts { get; } = new List<string>();
+        public IList<string> Contacts { get; } = [];
 
-        public IList<string> Domains { get; } = new List<string>();
+        public IList<string> Domains { get; } = [];
 
         public string? AccountFile { get; set; }
 

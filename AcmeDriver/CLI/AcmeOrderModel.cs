@@ -7,13 +7,13 @@ namespace AcmeDriver.CLI {
 
         public DateTimeOffset Expires { get; set; }
 
-        public AcmeIdentifier[] Identifiers { get; set; }
+        public AcmeIdentifier[] Identifiers { get; set; } = default!;
 
-        public Uri[] Authorizations { get; set; }
+        public Uri[] Authorizations { get; set; } = default!;
 
-        public Uri Finalize { get; set; }
+        public Uri Finalize { get; set; } = default!;
 
-        public Uri Location { get; init; }
+        public Uri Location { get; init; } = default!;
 
 		public static AcmeOrderModel From(AcmeOrder order) {
 			return new AcmeOrderModel {

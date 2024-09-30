@@ -11,19 +11,19 @@ namespace AcmeDriver {
         public DateTimeOffset Expires { get; set; }
 
         [JsonPropertyName("identifiers")]
-        public AcmeIdentifier[] Identifiers { get; set; }
+        public AcmeIdentifier[] Identifiers { get; set; } = default!;
 
         [JsonPropertyName("authorizations")]
-        public Uri[] Authorizations { get; set; }
+        public Uri[] Authorizations { get; set; } = default!;
 
         [JsonPropertyName("finalize")]
-        public Uri Finalize { get; set; }
+        public Uri Finalize { get; set; } = default!;
 
         [JsonPropertyName("certificate")]
         public Uri? Certificate { get; set; }
 
         [JsonIgnore]
-        public Uri Location { get; set; }
+        public Uri Location { get; set; } = default!;
 
     }
 }

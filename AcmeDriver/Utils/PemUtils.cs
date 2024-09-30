@@ -32,12 +32,12 @@ namespace AcmeDriver {
 
             var base64 = Convert.ToBase64String(bytesDER);
 
-            int offset = 0;
+            var offset = 0;
             const int LineLength = 64;
             while (offset < base64.Length) {
-                int lineEnd = Math.Min(offset + LineLength, base64.Length);
+                var lineEnd = Math.Min(offset + LineLength, base64.Length);
                 builder.AppendLine(
-                   base64.Substring(offset, lineEnd - offset));
+                   base64[offset..lineEnd]);
                 offset = lineEnd;
             }
 

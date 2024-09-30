@@ -9,7 +9,7 @@ namespace AcmeDriver.Certificates;
 public class CertificateRevokeModel {
 	[JsonPropertyName("certificate")]
 	[Required]
-	public string Certificate { get; set; }
+	public string Certificate { get; set; } = default!;
 
 	[JsonPropertyName("reason")]
 	public CertificateRevokeReason Reason { get; set; } = CertificateRevokeReason.Unspecified;
