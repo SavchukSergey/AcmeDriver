@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AcmeDriver {
     public static class PemUtils {
@@ -42,6 +43,18 @@ namespace AcmeDriver {
 
             builder.AppendLine($"-----END {type}-----");
             return builder.ToString();
+        }
+        
+        public static string GetEncodedCertFromPem(string pemCertificate) {
+            var pemPattern = @"-----BEGIN CERTIFICATE-----(.*?)-----END CERTIFICATE-----";
+            var match = Regex.Match(pemCertificate, pemPattern, RegexOptions.Singleline);
+            if (match.Success) {
+                var base64Cert = match.Groups[1].Value.Trim();
+                var certBytes = Convert.FromBase64String(base64Cert);
+                return Base64Url.Encode(certBytes);
+            }
+
+            throw new InvalidOperationException("Invalid PEM certificate format");
         }
 
     }
