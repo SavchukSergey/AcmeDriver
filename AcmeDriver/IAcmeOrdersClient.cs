@@ -13,7 +13,7 @@ namespace AcmeDriver {
 
 		Task<string> DownloadCertificateAsync(AcmeOrder order);
 
-		Task RevokeCertificateAsync(AcmeOrder order, CertificateRevokeReason reason);
+		Task RevokeCertificateAsync(AcmeOrder order, CertificateRevokeReason? reason = null);
 
 	}
 }
