@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AcmeDriver.Certificates;
 
 namespace AcmeDriver {
 	public class AcmeOrdersClient : IAcmeOrdersClient{
@@ -37,5 +38,17 @@ namespace AcmeDriver {
 			return _context.SendPostAsGetStringAsync(order.Certificate);
 		}
 
+		public async Task RevokeCertificateAsync(AcmeOrder order, CertificateRevokeReason? reason = null) {
+			var certificatePem = await DownloadCertificateAsync(order);
+			var model = new CertificateRevokeModel {
+				Certificate = PemUtils.GetEncodedCertFromPem(certificatePem)
+			};
+
+			if (reason is not null) {
+				model.Reason = reason.Value;
+			}
+
+			await _context.SendPostVoidAsync(_context.Directory.RevokeCertUrl, model);
+		}
 	}
 }
