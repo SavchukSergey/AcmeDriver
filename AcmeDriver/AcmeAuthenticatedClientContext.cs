@@ -22,6 +22,10 @@ namespace AcmeDriver {
 			return _inner.SendPostVoidAsync(uri, model, Registration);
 		}
 
+		public Task SendPostKidVoidAsync<TSource>(Uri uri, TSource model) {
+			return _inner.SendPostKidVoidAsync(uri, model, Registration);
+		}
+
 		public Task<TResult> SendPostKidAsync<TSource, TResult>(Uri uri, TSource model, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
 			return _inner.SendPostKidAsync<TSource, TResult>(uri, model, Registration, headersHandler);
 		}

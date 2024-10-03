@@ -51,7 +51,8 @@ namespace AcmeDriver {
                 NewNonceUrl = new Uri(baseUrl, "acme/new-nonce"),
                 NewAccountUrl = new Uri(baseUrl, "acme/new-acct"),
                 NewOrderUrl = new Uri(baseUrl, "acme/new-order"),
-                NewAuthzUrl = new Uri(baseUrl, "acme/new-authz")
+                NewAuthzUrl = new Uri(baseUrl, "acme/new-authz"),
+                RevokeCertUrl = new Uri(baseUrl, "acme/revoke-cert")
             };
         }
 

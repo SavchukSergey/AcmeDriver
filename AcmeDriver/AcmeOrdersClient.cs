@@ -48,7 +48,7 @@ namespace AcmeDriver {
 				model.Reason = reason.Value;
 			}
 
-			await _context.SendPostVoidAsync(_context.Directory.RevokeCertUrl, model);
+			await _context.SendPostKidVoidAsync(_context.Directory.RevokeCertUrl, model);
 		}
 	}
 }
