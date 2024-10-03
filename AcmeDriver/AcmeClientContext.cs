@@ -77,6 +77,22 @@ namespace AcmeDriver {
 			});
 		}
 
+		public async Task<HttpResponseMessage> SendPostKidVoidAsync<TSource>(Uri uri, TSource model, AcmeClientRegistration registration) {
+			if (uri is null) {
+				throw new ArgumentNullException(nameof(uri));
+			}
+			if (registration is null) {
+				throw new ArgumentNullException(nameof(registration));
+			}
+			var dataContent = AcmeJson.Serialize(model);
+			var data = Encoding.UTF8.GetBytes(dataContent);
+			return await SendWithNonceAsync(async nonce => {
+				var signedContent = registration.SignKid(uri, nonce, data);
+
+				return await PostAsync(uri, GetStringContent(signedContent)).ConfigureAwait(false);
+			});
+		}
+
 		public async Task<TResult> SendPostAsGetAsync<TResult>(Uri uri, AcmeClientRegistration registration, Action<HttpResponseHeaders, TResult>? headersHandler = null) where TResult : class {
 			var response = await SendPostAsGetResponseAsync(uri, registration).ConfigureAwait(false);
 			return await ProcessRequestAsync(response, headersHandler).ConfigureAwait(false);
