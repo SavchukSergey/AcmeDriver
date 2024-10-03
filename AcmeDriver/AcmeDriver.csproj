@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <Copyright>Copyright © 2024</Copyright>
     <ApplicationIcon />
-    <Version>2.3.0</Version>
+    <Version>2.3.1</Version>
     <Description>Acme Client Protocol Implementation</Description>
     <Authors>Sergey Savchuk</Authors>
     <RepositoryUrl>https://github.com/SavchukSergey/AcmeDriver</RepositoryUrl>
